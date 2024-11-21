@@ -8,6 +8,9 @@ pip install urllib3==1.26.7
 
 unfortunately, Streamlit recognizes every comment written with commas as a string doc and adds it to the page
 so the comments are gonna have to be written with # instead of commas for the rest of the code
+
+the way streamlit works is that each action reruns the whole script.
+this is why the functions are declared outside of what is rendered on the page in the main part
 '''
 import streamlit as st #ignore the warning, if streamlit is installed correctly it will work
 import pandas as pd
@@ -68,7 +71,6 @@ def plot_efficient_frontier_with_risky(risk_free_rate, shortyes):
     else:
         ax.set_ylim(-4, 9)
         ax.set_xlim(0, 2.25)
-    st.pyplot(fig)
     st.pyplot(fig)
 
 def ERC():
