@@ -104,20 +104,6 @@ class EfficientFrontier:
             tangency_mu = tangency_pf @ self.mu_mod
             tangency_vol = np.sqrt(tangency_pf @ self.covmat_mod @ tangency_pf)
 
-
-
-        plt.title(f'Efficient Frontier - Short-selling: {self.short} - Risk-free rate: {self.risk_free_rate}')
-        plt.xlabel('Volatility')
-        plt.ylabel('Return')
-
-        if self.short is False:
-            plt.ylim(-0.5, 1)
-            plt.xlim(0, 0.8)
-        else:
-            plt.ylim(-4, 9)
-            plt.xlim(0, 2.25)
-        plt.legend()
-        plt.show()
         if self.risk_free_rate is not None:
             return frontier1, frontier2, tangency_pf, tangency_mu, tangency_vol
         else:
@@ -281,3 +267,15 @@ class BlackLitterman:
         optimized_weights_bl = res.x
     
         return optimized_weights_bl
+
+def get_performance(prices, weights):
+    '''Show the performance of the portfolio with a graph across time.'''
+    # Compute the returns of the portfolio
+    returns = prices.pct_change().dropna()
+    returns = returns[returns.sum(axis=1) != 0]
+    returns = returns @ weights
+    returns = returns + 1
+    returns = returns.cumprod()
+    return returns
+   
+

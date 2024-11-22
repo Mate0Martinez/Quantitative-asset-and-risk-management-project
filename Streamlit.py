@@ -23,7 +23,7 @@ import Portfolio_classes as pc
 #functions used when a button is clicked
 #the idea is that when a button is clicked the script will run the function this allows to run the function only when the button is clicked
 #else the whole thing runs when the page is loaded
-
+@st.cache_data
 def load_data():
     prices = pd.read_excel('SP500 for Code.xlsx', sheet_name='SP50 2015', index_col=0, parse_dates=True)
     prices = prices.loc['2019-12-31':'2024-10-15']
@@ -77,18 +77,30 @@ def ERC():
     prices = load_data()
     portfolio = pc.Portfolio(prices)
     weights_erc = portfolio.ERC()
+    perf = pc.get_performance(prices,weights_erc)
+    fig, ax = plt.subplots()
+    ax.plot(perf)
+    st.pyplot(fig)
     return weights_erc
 
 def MDP():
     prices = load_data()
     portfolio = pc.Portfolio(prices)
     weights_mdp = portfolio.MDP()
+    perf = pc.get_performance(prices,weights_mdp)
+    fig, ax = plt.subplots()
+    ax.plot(perf)
+    st.pyplot(fig)
     return weights_mdp
 
 def EW():
     prices = load_data()
     portfolio = pc.Portfolio(prices)
     weights_eq = portfolio.EW()
+    perf = pc.get_performance(prices,weights_eq)
+    fig, ax = plt.subplots()
+    ax.plot(perf)
+    st.pyplot(fig)
     return weights_eq
 
 def BL():
@@ -115,6 +127,7 @@ if portfolio_choice == 'Mean variance':
     riskyes = st.checkbox('Risk-free rate?', value=False)
     if riskyes:
         risk_free_rate = st.number_input('Risk-free rate', value=0.01, step=0.01)
+        #risk_free_rate = st.select_slider('Risk-free rate', options=(i for i in np.linspace(0, 0.1, 11)))
     if st.button('Plot Efficient Frontier'):
 
         if riskyes: #plot the efficient frontier without the risk free asset
