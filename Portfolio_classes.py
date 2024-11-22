@@ -108,6 +108,14 @@ class EfficientFrontier:
             return frontier1, frontier2, tangency_pf, tangency_mu, tangency_vol
         else:
             return frontier1
+    def get_portfolio_based_on_gamma(self,gamma):
+        '''
+        Compute the minimum variance portfolio.
+        '''
+        port = self.efficient_frontier(self.n, self.x0, self.covmat, self.mu, gamma)
+
+
+        return port
 
 class Portfolio: 
     # Equal Risk Contribution Portfolio maybe use only one class and change the name to portfolio 

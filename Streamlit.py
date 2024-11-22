@@ -21,6 +21,12 @@ import Portfolio_classes as pc
 #import threading
 
 
+#STATE INITIALIZATION
+#state is used to store the data that is gonna be used in the app
+#this is done to keep some sensitive data during changes in the page
+if 'BL' not in st.session_state:
+    st.session_state.BL = None
+
 #DECLARATION OF FUNCTIONS
 #functions used when a button is clicked
 #the idea is that when a button is clicked the script will run the function this allows to run the function only when the button is clicked
@@ -32,15 +38,21 @@ def load_data():
     return prices
 
 
-def plot_efficient_frontier_without_risky(shortyes):
+
+
+   
+
+def plot_efficient_frontier_without_risky(shortyes,risk_aversion):
     prices = load_data()
     efficient_frontier = pc.EfficientFrontier(prices, short = shortyes)
     frontier = efficient_frontier.get_efficient_frontier()
     gammas = np.linspace(-5, 5, 500)
     gamma_zero_index = np.argmin(np.abs(gammas))
+    gamma_index = np.argmin(np.abs(gammas - risk_aversion)) #à verifier
     fig, ax = plt.subplots()
     ax.plot([f[1] for f in frontier], [f[0] for f in frontier], '-', label="Efficient Frontier")
     ax.plot(frontier[gamma_zero_index][1], frontier[gamma_zero_index][0], color='r', marker='D', label='Minimum Variance Portfolio')
+    ax.plot(frontier[gamma_index][1], frontier[gamma_index][0], color='g', marker='*', label='Your portfolio', markersize=10)
     ax.set_title(f'Efficient Frontier - Short-selling: {shortyes}')
     ax.set_xlabel('Volatility')
     ax.set_ylabel('Return')
@@ -53,17 +65,19 @@ def plot_efficient_frontier_without_risky(shortyes):
     st.pyplot(fig)
    
 
-def plot_efficient_frontier_with_risky(risk_free_rate, shortyes):
+def plot_efficient_frontier_with_risky(risk_free_rate, shortyes,risk_aversion):
     prices = load_data()
     efficient_frontier = pc.EfficientFrontier(prices, risk_free_rate=risk_free_rate,short=shortyes)
     frontier = efficient_frontier.get_efficient_frontier()
     fig, ax = plt.subplots()
     gammas = np.linspace(-5, 5, 500)
     gamma_zero_index = np.argmin(np.abs(gammas))
+    gamma_index = np.argmin(np.abs(gammas - risk_aversion))
     ax.plot([f[1] for f in frontier[0]], [f[0] for f in frontier[0]], '-', label="Efficient Frontier")
     ax.plot(frontier[0][gamma_zero_index][1], frontier[0][gamma_zero_index][0], color='r', marker='D', label='Minimum Variance Portfolio')
     ax.plot([f[1] for f in frontier[1]], [f[0] for f in frontier[1]], '--', label="Capital Market Line")
-    ax.plot(frontier[3], frontier[4], color='g', marker='*', label='Tangency Portfolio', markersize=10)
+    ax.plot(frontier[0][gamma_index][1], frontier[0][gamma_index][0], color='g', marker='*', label='Your portfolio', markersize=10)
+    ax.plot(frontier[3], frontier[4], color='orange', marker='*', label='Tangency Portfolio', markersize=10)
     ax.set_title(f'Efficient Frontier - Short-selling: {shortyes} - Risk-free rate: {risk_free_rate}')
     ax.set_xlabel('Volatility')
     ax.set_ylabel('Return')
@@ -146,14 +160,15 @@ if portfolio_choice == 'Mean variance':
     riskyes = st.checkbox('Risk-free rate?', value=False)
     if riskyes:
         risk_free_rate = st.number_input('Risk-free rate', value=0.01, step=0.01)
-        #risk_free_rate = st.select_slider('Risk-free rate', options=(i for i in np.linspace(0, 0.1, 11)))
+    risk_aversion = st.select_slider('Risk aversion', options=(i for i in np.linspace(0, 5, 10)))
+    
     if st.button('Plot Efficient Frontier'):
 
         if riskyes: #plot the efficient frontier without the risk free asset
 
-            plot_efficient_frontier_with_risky(risk_free_rate, shortyes)
+            plot_efficient_frontier_with_risky(risk_free_rate, shortyes,risk_aversion)
         else: #plot the efficient frontier with the risk free asset
-            plot_efficient_frontier_without_risky(shortyes)
+            plot_efficient_frontier_without_risky(shortyes,risk_aversion)
    
 elif portfolio_choice == 'Equal Risk Contribution':
     st.write('Equal Risk Contribution portfolio')
@@ -165,7 +180,29 @@ elif portfolio_choice == 'Most Diversified':
     st.write(weights_mdp)
 elif portfolio_choice == 'Black Litterman':
     st.write('Black Litterman portfolio')
-    
+    price = load_data()
+    name_assets = price.columns
+    select_asset = st.selectbox('Select option', (name_assets))
+    views = st.selectbox('Views', ['Bullish', 'Bearish'])
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if st.button('Add view'):
+            if st.session_state.BL is None:
+                st.session_state.BL = pd.DataFrame(columns=['Asset', 'View'])
+                st.session_state.BL = pd.DataFrame({'Asset': [select_asset], 'View': [views]})
+            else:
+                st.session_state.BL = pd.concat([st.session_state.BL, pd.DataFrame({'Asset': [select_asset], 'View': [views]})])
+            st.write('View added')
+            st.write(st.session_state.BL)
+    with col2:
+        if st.button('Show views'):
+            st.write(st.session_state.BL)
+    with col3:
+        if st.button('Clean views'):
+            st.session_state.BL = None
+            st.write('Views cleaned')
+        
+
 
 elif portfolio_choice == 'Equally weighted':
     st.write('Equally weighted portfolio')
