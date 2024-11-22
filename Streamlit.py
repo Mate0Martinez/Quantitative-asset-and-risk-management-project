@@ -17,6 +17,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import Portfolio_classes as pc
+#from TradeBot.Trading_bot import scheduler
+#import threading
 
 
 #DECLARATION OF FUNCTIONS
@@ -109,6 +111,23 @@ def BL():
     weights_bl = "Not ready yet"
     return weights_bl
 
+
+##########################
+# Bot control, à modifier j'ai fais dla merde
+##########################
+
+#def start_hft_bot(): #  this function avoids to block the streamlit app from running
+#    import logging
+#    logging.basicConfig(level=logging.INFO)  # To avoid scheduler warnings
+#    bot_thread = threading.Thread(target=scheduler.start)
+#    bot_thread.daemon = True  # Ensures the thread will close when the Streamlit app stops
+#    bot_thread.start()
+
+##########################
+# Bot control, à modifier j'ai fais dla merde
+##########################
+
+
 #MAIN PART OF THE SITE
 
 # Title of the app
@@ -156,3 +175,23 @@ elif portfolio_choice == 'Equally weighted':
 
 # Placeholder for future functionality
 st.write('This is a placeholder for future functionality.')
+
+
+##########################
+# Bot control, à modifier j'ai fais dla merde
+##########################
+#'''If bot does not work, don't forget to install dependecies: pip install -r TradeBot/requirements.txt'''
+#'''st.sidebar.title("Trading Bot Control")
+#if st.sidebar.checkbox("Activate Trading Bot"):
+#    st.sidebar.success("Trading Bot is Active")
+
+#   if st.sidebar.button("Start Bot"):
+#        st.sidebar.warning("Starting the bot...")
+#        start_hft_bot()
+#        st.sidebar.success("Bot is running!")
+#else:
+#    st.sidebar.info("Trading Bot is Inactive")'''
+##########################
+# Bot control, à modifier j'ai fais dla merde
+##########################
+
