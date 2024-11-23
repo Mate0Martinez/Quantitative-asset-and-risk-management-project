@@ -17,15 +17,20 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import Portfolio_classes as pc
-#from TradeBot.Trading_bot import scheduler
-#import threading
+import threading
+from apscheduler.schedulers.background import BackgroundScheduler
 
+scheduler = BackgroundScheduler()
+scheduler.add_jobstore('memory')  # Ensure jobs are stored in memory
 
 #STATE INITIALIZATION
 #state is used to store the data that is gonna be used in the app
 #this is done to keep some sensitive data during changes in the page
 if 'BL' not in st.session_state:
     st.session_state.BL = None
+
+if 'bot_active' not in st.session_state:
+    st.session_state.bot_active = False
 
 #DECLARATION OF FUNCTIONS
 #functions used when a button is clicked
@@ -126,21 +131,22 @@ def BL():
     return weights_bl
 
 
-##########################
-# Bot control, à modifier j'ai fais dla merde
-##########################
+####### Bot Control Functions
+def start_hft_bot():
+    import logging
+    logging.basicConfig(level=logging.INFO)  # Avoid scheduler warnings
+    if not scheduler.running:  # Prevent multiple scheduler starts
+        scheduler.start()
+        bot_thread = threading.Thread(target=scheduler.start)
+        bot_thread.daemon = True  # Ensure thread closes when Streamlit stops
+        bot_thread.start()
 
-#def start_hft_bot(): #  this function avoids to block the streamlit app from running
-#    import logging
-#    logging.basicConfig(level=logging.INFO)  # To avoid scheduler warnings
-#    bot_thread = threading.Thread(target=scheduler.start)
-#    bot_thread.daemon = True  # Ensures the thread will close when the Streamlit app stops
-#    bot_thread.start()
-
-##########################
-# Bot control, à modifier j'ai fais dla merde
-##########################
-
+def stop_hft_bot():
+    if scheduler.running:  # Safely stop the scheduler
+        scheduler.shutdown(wait=False)  # Ensure the scheduler stops immediately
+    st.session_state.bot_active = False
+    st.sidebar.info("Bot has been stopped.")
+#######
 
 #MAIN PART OF THE SITE
 
@@ -210,25 +216,31 @@ elif portfolio_choice == 'Equally weighted':
     st.write(weights_eq)
 
 
+
+###### Bot Control in Sidebar
+st.sidebar.title("Trading Bot Control")
+if st.sidebar.checkbox("Activate Trading Bot", value=False):
+    if not st.session_state.bot_active:
+        st.sidebar.warning("Starting the bot...")
+        start_hft_bot()
+        st.session_state.bot_active = True
+        st.sidebar.success("Bot is running!")
+    else:
+        st.sidebar.info("Bot is already active.")
+else:
+    if st.session_state.bot_active:
+        stop_hft_bot()
+        st.sidebar.info("Bot has been stopped.")
+######
+
+if st.session_state.bot_active:
+    st.success("The bot is currently running.")
+else:
+    st.warning("The bot is not active.")
+
+
 # Placeholder for future functionality
 st.write('This is a placeholder for future functionality.')
 
 
-##########################
-# Bot control, à modifier j'ai fais dla merde
-##########################
-#'''If bot does not work, don't forget to install dependecies: pip install -r TradeBot/requirements.txt'''
-#'''st.sidebar.title("Trading Bot Control")
-#if st.sidebar.checkbox("Activate Trading Bot"):
-#    st.sidebar.success("Trading Bot is Active")
-
-#   if st.sidebar.button("Start Bot"):
-#        st.sidebar.warning("Starting the bot...")
-#        start_hft_bot()
-#        st.sidebar.success("Bot is running!")
-#else:
-#    st.sidebar.info("Trading Bot is Inactive")'''
-##########################
-# Bot control, à modifier j'ai fais dla merde
-##########################
 
