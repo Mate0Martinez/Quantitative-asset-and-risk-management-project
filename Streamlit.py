@@ -54,6 +54,7 @@ def plot_efficient_frontier_without_risky(shortyes,risk_aversion):
     gammas = np.linspace(-5, 5, 500)
     gamma_zero_index = np.argmin(np.abs(gammas))
     gamma_index = np.argmin(np.abs(gammas - risk_aversion)) #à verifier
+    sharpe_MV, mu_MV, vol_MV = efficient_frontier.metrics_MV(gamma=risk_aversion)
     fig, ax = plt.subplots()
     ax.plot([f[1] for f in frontier], [f[0] for f in frontier], '-', label="Efficient Frontier")
     ax.plot(frontier[gamma_zero_index][1], frontier[gamma_zero_index][0], color='r', marker='D', label='Minimum Variance Portfolio')
@@ -67,6 +68,12 @@ def plot_efficient_frontier_without_risky(shortyes,risk_aversion):
     else:
         ax.set_ylim(-4, 9)
         ax.set_xlim(0, 2.25)
+
+    # Add text annotations for Sharpe, mu, and vol
+    ax.text(0.6, 0.7, 
+            f"Sharpe: {sharpe_MV:.2f}\nμ: {mu_MV:.2%}\nσ: {vol_MV:.2%}", 
+            fontsize=9, bbox=dict(facecolor='white', alpha=0.8, edgecolor='black'))
+    
     st.pyplot(fig)
    
 
@@ -78,6 +85,7 @@ def plot_efficient_frontier_with_risky(risk_free_rate, shortyes,risk_aversion):
     gammas = np.linspace(-5, 5, 500)
     gamma_zero_index = np.argmin(np.abs(gammas))
     gamma_index = np.argmin(np.abs(gammas - risk_aversion))
+    sharpe_MV, mu_MV, vol_MV = efficient_frontier.metrics_MV(gamma=risk_aversion)
     ax.plot([f[1] for f in frontier[0]], [f[0] for f in frontier[0]], '-', label="Efficient Frontier")
     ax.plot(frontier[0][gamma_zero_index][1], frontier[0][gamma_zero_index][0], color='r', marker='D', label='Minimum Variance Portfolio')
     ax.plot([f[1] for f in frontier[1]], [f[0] for f in frontier[1]], '--', label="Capital Market Line")
@@ -92,6 +100,12 @@ def plot_efficient_frontier_with_risky(risk_free_rate, shortyes,risk_aversion):
     else:
         ax.set_ylim(-4, 9)
         ax.set_xlim(0, 2.25)
+
+    # Add text annotations for Sharpe, mu, and vol
+    ax.text(0.6,0.7, # changer la position
+            f"Sharpe: {sharpe_MV:.2f}\nμ: {mu_MV:.2%}\nσ: {vol_MV:.2%}", 
+            fontsize=9, bbox=dict(facecolor='white', alpha=0.8, edgecolor='black'))
+    
     st.pyplot(fig)
 
 def ERC():
@@ -175,6 +189,7 @@ if portfolio_choice == 'Mean variance':
             plot_efficient_frontier_with_risky(risk_free_rate, shortyes,risk_aversion)
         else: #plot the efficient frontier with the risk free asset
             plot_efficient_frontier_without_risky(shortyes,risk_aversion)
+
    
 elif portfolio_choice == 'Equal Risk Contribution':
     st.write('Equal Risk Contribution portfolio')

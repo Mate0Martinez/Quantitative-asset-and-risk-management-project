@@ -131,7 +131,7 @@ class EfficientFrontier:
 
         # Calculez le Sharpe Ratio
         sharpe_ratio = (mu_optimized - rf) / vol_optimized
-        return sharpe_ratio, mu_optimized, vol_optimized, optimized_weights
+        return sharpe_ratio, mu_optimized, vol_optimized
 
 class Portfolio: 
     # Equal Risk Contribution Portfolio maybe use only one class and change the name to portfolio 
