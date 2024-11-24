@@ -166,7 +166,7 @@ if portfolio_choice == 'Mean variance':
     riskyes = st.checkbox('Risk-free rate?', value=False)
     if riskyes:
         risk_free_rate = st.number_input('Risk-free rate', value=0.01, step=0.01)
-    risk_aversion = st.select_slider('Risk aversion', options=(i for i in np.linspace(0, 5, 10)))
+    risk_aversion = st.select_slider('How much risk you want to take?', options=(i for i in np.linspace(0, 1, 11)))
     
     if st.button('Plot Efficient Frontier'):
 
