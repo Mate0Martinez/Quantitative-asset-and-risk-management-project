@@ -45,8 +45,8 @@ def load_data():
 
 
 
-   
 
+   
 def plot_efficient_frontier_without_risky(shortyes,risk_aversion):
     prices = load_data()
     efficient_frontier = pc.EfficientFrontier(prices, short = shortyes)
@@ -82,7 +82,7 @@ def plot_efficient_frontier_with_risky(risk_free_rate, shortyes,risk_aversion):
     ax.plot(frontier[0][gamma_zero_index][1], frontier[0][gamma_zero_index][0], color='r', marker='D', label='Minimum Variance Portfolio')
     ax.plot([f[1] for f in frontier[1]], [f[0] for f in frontier[1]], '--', label="Capital Market Line")
     ax.plot(frontier[0][gamma_index][1], frontier[0][gamma_index][0], color='g', marker='*', label='Your portfolio', markersize=10)
-    ax.plot(frontier[3], frontier[4], color='orange', marker='*', label='Tangency Portfolio', markersize=10)
+    ax.plot(frontier[4], frontier[3], color='orange', marker='*', label='Tangency Portfolio', markersize=10)
     ax.set_title(f'Efficient Frontier - Short-selling: {shortyes} - Risk-free rate: {risk_free_rate}')
     ax.set_xlabel('Volatility')
     ax.set_ylabel('Return')
@@ -166,7 +166,7 @@ if portfolio_choice == 'Mean variance':
     riskyes = st.checkbox('Risk-free rate?', value=False)
     if riskyes:
         risk_free_rate = st.number_input('Risk-free rate', value=0.01, step=0.01)
-    risk_aversion = st.select_slider('How much risk you want to take?', options=(i for i in np.linspace(0, 1, 11)))
+    risk_aversion = float(st.select_slider('How much risk you want to take?', options=[f"{i:.2f}" for i in np.linspace(0, 1, 11)]))
     
     if st.button('Plot Efficient Frontier'):
 
