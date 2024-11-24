@@ -116,6 +116,22 @@ class EfficientFrontier:
 
 
         return port
+    
+    # metrics for the optimized portfolio
+    def metrics_MV(self, gamma):
+        '''
+        Calculate the Sharpe Ratio and other metrics for a specific gamma.
+        '''
+        # Obtenez les résultats optimaux pour le gamma donné
+        mu_optimized, vol_optimized, optimized_weights = self.efficient_frontier(
+            self.n, self.x0, self.covmat, self.mu, gamma)
+
+        # Si le taux sans risque est fourni, utilisez-le, sinon 0
+        rf = self.risk_free_rate if self.risk_free_rate is not None else 0
+
+        # Calculez le Sharpe Ratio
+        sharpe_ratio = (mu_optimized - rf) / vol_optimized
+        return sharpe_ratio, mu_optimized, vol_optimized, optimized_weights
 
 class Portfolio: 
     # Equal Risk Contribution Portfolio maybe use only one class and change the name to portfolio 
