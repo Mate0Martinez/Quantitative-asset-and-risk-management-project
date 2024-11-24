@@ -193,8 +193,8 @@ class Portfolio:
         constraints = [LinearConstraint(np.eye(self.x0.shape[0]), lb = 0, ub = 1), NonlinearConstraint(logy, lb = -n * np.log(n) - 2, ub=np.inf)]
         res = minimize(self.QP, self.x0, args=(self.covmat), constraints=constraints) 
         optimized_weights_erc = res.x / np.sum(res.x)
-
         return optimized_weights_erc
+    
 
     def DR(self,x,vol,sigma):
         '''Compute the diversification ratio of the portfolio.'''
@@ -207,6 +207,7 @@ class Portfolio:
 
 
         return optimized_weights_mdp
+            
     
 class BlackLitterman:
     def __init__(self, prices, risk_free_rate, short=False):
@@ -301,5 +302,3 @@ def get_performance(prices, weights):
     returns = returns + 1
     returns = returns.cumprod()
     return returns
-   
-

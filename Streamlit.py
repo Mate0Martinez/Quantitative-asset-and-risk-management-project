@@ -115,8 +115,24 @@ def ERC():
     perf = pc.get_performance(prices,weights_erc)
     fig, ax = plt.subplots()
     ax.plot(perf)
-    st.pyplot(fig)
-    return weights_erc
+    st.session_state.erc_plot = fig  # Save the plot to session state
+
+    # Metrics
+    prtfl_return = np.dot(portfolio.mu, weights_erc)
+    prtfl_vol = np.sqrt(weights_erc @ portfolio.covmat @ weights_erc)
+    risk_free_rate = portfolio.risk_free_rate if portfolio.risk_free_rate is not None else 0
+    sharpe_ratio = (prtfl_return - risk_free_rate) / prtfl_vol
+
+    # Store results in session_state for reuse
+    st.session_state.erc_results = {
+        'weights_erc': weights_erc,
+        'return_erc': prtfl_return,
+        'vol_erc': prtfl_vol,
+        'sharpe_erc': sharpe_ratio,
+        'perf': perf
+    }
+
+    return weights_erc, prtfl_return, prtfl_vol, sharpe_ratio
 
 def MDP():
     prices = load_data()
@@ -125,8 +141,24 @@ def MDP():
     perf = pc.get_performance(prices,weights_mdp)
     fig, ax = plt.subplots()
     ax.plot(perf)
-    st.pyplot(fig)
-    return weights_mdp
+    st.session_state.mdp_plot = fig  # Save the plot to session state
+
+    # Metrics
+    prtfl_return = np.dot(portfolio.mu, weights_mdp)
+    prtfl_vol = np.sqrt(weights_mdp @ portfolio.covmat @ weights_mdp)
+    risk_free_rate = portfolio.risk_free_rate if portfolio.risk_free_rate is not None else 0
+    sharpe_ratio = (prtfl_return - risk_free_rate) / prtfl_vol
+
+    # Store results in session_state for reuse
+    st.session_state.mdp_results = {
+        'weights_mdp': weights_mdp,
+        'return_mdp': prtfl_return,
+        'vol_mdp': prtfl_vol,
+        'sharpe_mdp': sharpe_ratio,
+        'perf': perf
+    }
+
+    return weights_mdp, prtfl_return, prtfl_vol, sharpe_ratio
 
 def EW():
     prices = load_data()
@@ -135,8 +167,24 @@ def EW():
     perf = pc.get_performance(prices,weights_eq)
     fig, ax = plt.subplots()
     ax.plot(perf)
-    st.pyplot(fig)
-    return weights_eq
+    st.session_state.eq_plot = fig  # Save the plot to session state
+
+    #Metrics
+    prtfl_return = np.dot(portfolio.mu, weights_eq)
+    prtfl_vol = np.sqrt(weights_eq @ portfolio.covmat @ weights_eq)
+    risk_free_rate = portfolio.risk_free_rate if portfolio.risk_free_rate is not None else 0
+    sharpe_ratio = (prtfl_return - risk_free_rate) / prtfl_vol
+
+    # Store results in session_state for reuse
+    st.session_state.eq_results = {
+        'weights_eq': weights_eq,
+        'return_eq': prtfl_return,
+        'vol_eq': prtfl_vol,
+        'sharpe_eq': sharpe_ratio,
+        'perf': perf
+    }
+
+    return weights_eq, prtfl_return, prtfl_vol, sharpe_ratio
 
 def BL():
     prices = load_data()
@@ -193,12 +241,46 @@ if portfolio_choice == 'Mean variance':
    
 elif portfolio_choice == 'Equal Risk Contribution':
     st.write('Equal Risk Contribution portfolio')
-    weights_erc = ERC()
+    if 'erc_results' not in st.session_state:
+        # If ERC results are not already computed, call ERC to calculate and store the results
+        weights_erc, return_erc, vol_erc, sharpe_erc = ERC()
+    else:
+        # Use cached results
+        weights_erc = st.session_state.erc_results['weights_erc']
+        return_erc = st.session_state.erc_results['return_erc']
+        vol_erc = st.session_state.erc_results['vol_erc']
+        sharpe_erc = st.session_state.erc_results['sharpe_erc']
+    
+    if 'erc_plot' in st.session_state: # so that if you rerun erc opti, you still have the plot. Otherwise the plot disappears when rerunning
+        st.pyplot(st.session_state.erc_plot)
+    
     st.write(weights_erc)
+    st.write(f'Returns of Portfolio: {return_erc}')
+    st.write(f'Volatility of Portfolio: {vol_erc}')
+    st.write(f'Sharpe Ratio of Portfolio: {sharpe_erc}')
+    st.write()
+
 elif portfolio_choice == 'Most Diversified':
     st.write('Most Diversified portfolio')
-    weights_mdp = MDP()
+    if 'mdp_results' not in st.session_state:
+        # If mdp results are not already computed, call mdp to calculate and store the results
+        weights_mdp, return_mdp, vol_mdp, sharpe_mdp = MDP()
+    else:
+        # Use cached results
+        weights_mdp = st.session_state.mdp_results['weights_mdp']
+        return_mdp = st.session_state.mdp_results['return_mdp']
+        vol_mdp = st.session_state.mdp_results['vol_mdp']
+        sharpe_mdp = st.session_state.mdp_results['sharpe_mdp']
+    
+    if 'mdp_plot' in st.session_state: # so that if you rerun erc opti, you still have the plot. Otherwise the plot disappears when rerunning
+        st.pyplot(st.session_state.mdp_plot)
+    
     st.write(weights_mdp)
+    st.write(f'Returns of Portfolio: {return_mdp}')
+    st.write(f'Volatility of Portfolio: {vol_mdp}')
+    st.write(f'Sharpe Ratio of Portfolio: {sharpe_mdp}')
+    st.write()
+
 elif portfolio_choice == 'Black Litterman':
     st.write('Black Litterman portfolio')
     price = load_data()
@@ -227,8 +309,24 @@ elif portfolio_choice == 'Black Litterman':
 
 elif portfolio_choice == 'Equally weighted':
     st.write('Equally weighted portfolio')
-    weights_eq = EW()
+    if 'eq_results' not in st.session_state:
+        # If eq results are not already computed, call eq to calculate and store the results
+        weights_eq, return_eq, vol_eq, sharpe_eq = EW()
+    else:
+        # Use cached results
+        weights_eq = st.session_state.eq_results['weights_eq']
+        return_eq = st.session_state.eq_results['return_eq']
+        vol_eq = st.session_state.eq_results['vol_eq']
+        sharpe_eq = st.session_state.eq_results['sharpe_eq']
+    
+    if 'eq_plot' in st.session_state: # so that if you rerun eq opti, you still have the plot. Otherwise the plot disappears when rerunning
+        st.pyplot(st.session_state.eq_plot)
+    
     st.write(weights_eq)
+    st.write(f'Returns of Portfolio: {return_eq}')
+    st.write(f'Volatility of Portfolio: {vol_eq}')
+    st.write(f'Sharpe Ratio of Portfolio: {sharpe_eq}')
+    st.write()
 
 
 
