@@ -1,0 +1,34 @@
+,Type,NAME,REGION,TRBC INDUSTRY NAME,TRBC BUSI SEC NAME
+0,U:XOM,EXXON MOBIL,"AMERICAS, NORTH AMERICA",Integrated Oil & Gas,Energy - Fossil Fuels
+1,U:CVX,CHEVRON,"AMERICAS, NORTH AMERICA",Integrated Oil & Gas,Energy - Fossil Fuels
+2,U:COP,CONOCOPHILLIPS,"AMERICAS, NORTH AMERICA",Oil & Gas Exploration and Production,Energy - Fossil Fuels
+3,U:NEE,NEXTERA ENERGY,"AMERICAS, NORTH AMERICA",Electric Utilities,Utilities
+4,U:MS,MORGAN STANLEY,"AMERICAS, NORTH AMERICA",Investment Banking & Brokerage Services,Banking & Investment Services
+5,U:BLK,BLACKROCK,"AMERICAS, NORTH AMERICA",Investment Management & Fund Operators,Banking & Investment Services
+6,U:ICE,INTERCONTINENTAL EX.,"AMERICAS, NORTH AMERICA",Financial & Commodity Market Operators & Service Providers,Banking & Investment Services
+7,@CME,CME GROUP,"AMERICAS, NORTH AMERICA",Financial & Commodity Market Operators & Service Providers,Banking & Investment Services
+8,U:ABT,ABBOTT LABORATORIES,"AMERICAS, NORTH AMERICA","Medical Equipment, Supplies & Distribution",Healthcare Services & Equipment
+9,U:TMO,THERMO FISHER SCIENTIFIC,"AMERICAS, NORTH AMERICA",Advanced Medical Equipment & Technology,Healthcare Services & Equipment
+10,@ISRG,INTUITIVE SURGICAL,"AMERICAS, NORTH AMERICA",Advanced Medical Equipment & Technology,Healthcare Services & Equipment
+11,U:MDT,MEDTRONIC,"AMERICAS, NORTH AMERICA","Medical Equipment, Supplies & Distribution",Healthcare Services & Equipment
+12,@HON,HONEYWELL INTL.,"AMERICAS, NORTH AMERICA",Consumer Goods Conglomerates,Consumer Goods Conglomerates
+13,U:UNP,UNION PACIFIC,"AMERICAS, NORTH AMERICA",Ground Freight & Logistics,Transportation
+14,U:ETN,EATON,"AMERICAS, NORTH AMERICA",Electrical Components & Equipment,Industrial Goods
+15,U:UPS,UNITED PARCEL SER.'B',"AMERICAS, NORTH AMERICA","Courier, Postal, Air Freight & Land-based Logistics",Transportation
+16,@AMZN,AMAZON.COM,"AMERICAS, NORTH AMERICA",Department Stores,Retailers
+17,@MSFT,MICROSOFT,"AMERICAS, NORTH AMERICA",Software,Software & IT Services
+18,@AMD,ADVANCED MICRO DEVICES,"AMERICAS, NORTH AMERICA",Semiconductors,Technology Equipment
+19,U:HPE,HEWLETT PACKARD ENTER.,AMERICAS,Computer Hardware,Technology Equipment
+20,U:MLM,MARTIN MRTA.MATS.,"AMERICAS, NORTH AMERICA",Construction Materials,Mineral Resources
+21,U:VMC,VULCAN MATERIALS,"AMERICAS, NORTH AMERICA",Construction Materials,Mineral Resources
+22,U:BLDR,BUILDERS FIRSTSOURCE,"AMERICAS, NORTH AMERICA",Construction Supplies & Fixtures,Cyclical Consumer Products
+23,U:MAS,MASCO,"AMERICAS, NORTH AMERICA",Construction Supplies & Fixtures,Cyclical Consumer Products
+24,U:PLD,PROLOGIS REIT,"AMERICAS, NORTH AMERICA",Commercial REITs,Real Estate
+25,U:SPG,SIMON PROPERTY GROUP,"AMERICAS, NORTH AMERICA",Commercial REITs,Real Estate
+26,U:O,REALTY INCOME,"AMERICAS, NORTH AMERICA",Commercial REITs,Real Estate
+27,U:FRT,FEDERAL REALTY INV.TST.,"AMERICAS, NORTH AMERICA",Commercial REITs,Real Estate
+28,U:CBRE,CBRE GROUP CLASS A,"AMERICAS, NORTH AMERICA",Real Estate Services,Real Estate
+29,U:DUK,DUKE ENERGY,"AMERICAS, NORTH AMERICA",Electric Utilities,Utilities
+30,U:SRE,SEMPRA,"AMERICAS, NORTH AMERICA",Multiline Utilities,Utilities
+31,U:WEC,WEC ENERGY GROUP,"AMERICAS, NORTH AMERICA",Electric Utilities,Utilities
+32,U:AWK,AMERICAN WATER WORKS,"AMERICAS, NORTH AMERICA",Water & Related Utilities,Utilities

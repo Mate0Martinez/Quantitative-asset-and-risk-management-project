@@ -1,0 +1,33 @@
+,Type,NAME,REGION,TRBC INDUSTRY NAME,TRBC BUSI SEC NAME
+0,F:FP,TOTALENERGIES,"EUROPE+AFRICA, NON-U.S.",Integrated Oil & Gas,Energy - Fossil Fuels
+1,I:ENI,ENI,"EUROPE+AFRICA, NON-U.S.",Integrated Oil & Gas,Energy - Fossil Fuels
+2,H:RDSA,SHELL (AMS),"EUROPE+AFRICA, NON-U.S.",Integrated Oil & Gas,Energy - Fossil Fuels
+3,F:VLR,VALLOUREC,"EUROPE+AFRICA, NON-U.S.",Oil Related Services and Equipment,Energy - Fossil Fuels
+4,SDR,SCHRODERS,"EUROPE+AFRICA, NON-U.S.",Investment Management & Fund Operators,Banking & Investment Services
+5,F:ERF,EURAZEO,"EUROPE+AFRICA, NON-U.S.",Investment Management & Fund Operators,Banking & Investment Services
+6,B:GBLN,GBL NEW,"EUROPE+AFRICA, NON-U.S.",Investment Holding Companies,Holding Companies
+7,S:SQN,SWISSQUOTE 'R',"EUROPE+AFRICA, NON-U.S.",Financial & Commodity Market Operators & Service Providers,Banking & Investment Services
+8,SN.,SMITH & NEPHEW,"EUROPE+AFRICA, NON-U.S.","Medical Equipment, Supplies & Distribution",Healthcare Services & Equipment
+9,F:EI,ESSILORLUXOTTICA,"EUROPE+AFRICA, NON-U.S.","Medical Equipment, Supplies & Distribution",Healthcare Services & Equipment
+10,DK:COL,COLOPLAST B,"EUROPE+AFRICA, NON-U.S.","Medical Equipment, Supplies & Distribution",Healthcare Services & Equipment
+11,DK:WDH,DEMANT,"EUROPE+AFRICA, NON-U.S.","Medical Equipment, Supplies & Distribution",Healthcare Services & Equipment
+12,BNZL,BUNZL,"EUROPE+AFRICA, NON-U.S.",Diversified Industrial Goods Wholesalers,Industrial & Commercial Services
+13,S:SCHP,SCHINDLER 'P',"EUROPE+AFRICA, NON-U.S.",Heavy Electrical Equipment,Industrial Goods
+14,M:HUIF,HUHTAMAKI,"EUROPE+AFRICA, NON-U.S.",Paper Packaging,Applied Resources
+15,E:VID,VIDRALA,"EUROPE+AFRICA, NON-U.S.",Non-Paper Containers & Packaging,Applied Resources
+16,W:SL@G,ERICSSON B,"EUROPE+AFRICA, NON-U.S.",Communications & Networking,Technology Equipment
+17,M:NOK1,NOKIA,"EUROPE+AFRICA, NON-U.S.",Communications & Networking,Technology Equipment
+18,S:LOGN,LOGITECH 'R',"EUROPE+AFRICA, NON-U.S.",Computer Hardware,Technology Equipment
+19,F:CAP,CAPGEMINI,"EUROPE+AFRICA, NON-U.S.",IT Services & Consulting,Software & IT Services
+20,BBY,BALFOUR BEATTY,"EUROPE+AFRICA, NON-U.S.",Construction & Engineering,Industrial & Commercial Services
+21,O:WNBA,WIENERBERGER,"EUROPE+AFRICA, NON-U.S.",Construction Materials,Mineral Resources
+22,S:SIKA,SIKA,"EUROPE+AFRICA, NON-U.S.",Specialty Chemicals,Chemicals
+23,H:LIGH,SIGNIFY,"EUROPE+AFRICA, NON-U.S.",Construction Supplies & Fixtures,Cyclical Consumer Products
+24,BLND,BRITISH LAND,"EUROPE+AFRICA, NON-U.S.",Diversified REITs,Real Estate
+25,W:BALB,FASTIGHETS BALDER B,"EUROPE+AFRICA, NON-U.S.","Real Estate Rental, Development & Operations",Real Estate
+26,S:PSPN,PSP SWISS PROPERTY AG,"EUROPE+AFRICA, NON-U.S.","Real Estate Rental, Development & Operations",Real Estate
+27,D:TEGX,TAG IMMOBILIEN (XET),"EUROPE+AFRICA, NON-U.S.","Real Estate Rental, Development & Operations",Real Estate
+28,E:CTG,NATURGY ENERGY,"EUROPE+AFRICA, NON-U.S.",Natural Gas Utilities,Utilities
+29,PNN,PENNON GROUP,"EUROPE+AFRICA, NON-U.S.",Water & Related Utilities,Utilities
+30,D:EOANX,E ON N (XET),"EUROPE+AFRICA, NON-U.S.",Multiline Utilities,Utilities
+31,CNA,CENTRICA,"EUROPE+AFRICA, NON-U.S.",Multiline Utilities,Utilities

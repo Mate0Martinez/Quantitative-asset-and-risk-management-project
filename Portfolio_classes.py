@@ -24,7 +24,6 @@ class EfficientFrontier:
         self.prices = prices  # DataFrame with historical prices
         self.risk_free_rate = risk_free_rate  # Risk-free rate
         self.returns = prices.pct_change().dropna()  # Compute returns
-        self.returns = self.returns[self.returns.sum(axis=1) != 0]  # Remove days with zero returns
         self.short = short  # Short-selling allowed or not
 
         # Compute returns and covariances for the risky assets

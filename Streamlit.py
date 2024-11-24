@@ -37,18 +37,44 @@ if 'bot_active' not in st.session_state:
 #the idea is that when a button is clicked the script will run the function this allows to run the function only when the button is clicked
 #else the whole thing runs when the page is loaded
 @st.cache_data
-def load_data():
-    prices = pd.read_excel('SP500 for Code.xlsx', sheet_name='SP50 2015', index_col=0, parse_dates=True)
-    prices = prices.loc['2019-12-31':'2024-10-15']
-    return prices
+def load_data(markets, sectors):
+    ## Import the .csv files
+    commodities_prices = pd.read_csv('Data/commodity_prices.csv', index_col=0)
+    emerging_prices = pd.read_csv('Data/emerging_prices.csv', index_col=0)
+    emerging_sectors = pd.read_csv('Data/emerging_sectors.csv', index_col=0)
+    euro_prices = pd.read_csv('Data/euro_prices.csv', index_col=0)
+    euro_sectors = pd.read_csv('Data/euro_sectors.csv', index_col=0)
+    sp_prices = pd.read_csv('Data/sp_prices.csv', index_col=0)
+    sp_sectors = pd.read_csv('Data/sp_sectors.csv', index_col=0)
 
+    ## Initialize the dataframes
+    data = pd.DataFrame()
+    sectors_data = pd.DataFrame()
 
+    ## Depending on the markets selected, we add the corresponding returns
+    for market in markets:
+        if market == 'US':
+            data = pd.concat([data, sp_prices], axis=1)
+            sectors_data = pd.concat([sectors_data, sp_sectors], axis=0)
+        elif market == 'EU':
+            data = pd.concat([data, euro_prices], axis=1)
+            sectors_data = pd.concat([sectors_data, euro_sectors], axis=0)
+        elif market == 'EM':
+            data = pd.concat([data, emerging_prices], axis=1)
+            sectors_data = pd.concat([sectors_data, emerging_sectors], axis=0)
+    
+    ## Depending on the sectors selected, we filter out the data
+    tickers = sectors_data[sectors_data['TRBC BUSI SEC NAME'].isin(sectors)].NAME
+    data = data.iloc[:,data.columns.isin(tickers)]
 
-
+    if len(data) == 0:
+        st.warning('No data available for the selected markets and sectors.')
+    else:
+        return data
 
    
 def plot_efficient_frontier_without_risky(shortyes,risk_aversion):
-    prices = load_data()
+    prices = load_data(markets, sectors)
     efficient_frontier = pc.EfficientFrontier(prices, short = shortyes)
     frontier = efficient_frontier.get_efficient_frontier()
     gammas = np.linspace(-5, 5, 500)
@@ -62,6 +88,7 @@ def plot_efficient_frontier_without_risky(shortyes,risk_aversion):
     ax.set_title(f'Efficient Frontier - Short-selling: {shortyes}')
     ax.set_xlabel('Volatility')
     ax.set_ylabel('Return')
+    ax.legend()
     if shortyes is False:
         ax.set_ylim(-0.5, 1)
         ax.set_xlim(0, 0.8)
@@ -78,7 +105,7 @@ def plot_efficient_frontier_without_risky(shortyes,risk_aversion):
    
 
 def plot_efficient_frontier_with_risky(risk_free_rate, shortyes,risk_aversion):
-    prices = load_data()
+    prices = load_data(markets, sectors)
     efficient_frontier = pc.EfficientFrontier(prices, risk_free_rate=risk_free_rate,short=shortyes)
     frontier = efficient_frontier.get_efficient_frontier()
     fig, ax = plt.subplots()
@@ -94,6 +121,7 @@ def plot_efficient_frontier_with_risky(risk_free_rate, shortyes,risk_aversion):
     ax.set_title(f'Efficient Frontier - Short-selling: {shortyes} - Risk-free rate: {risk_free_rate}')
     ax.set_xlabel('Volatility')
     ax.set_ylabel('Return')
+    ax.legend()
     if shortyes is False:
         ax.set_ylim(-0.5, 1)
         ax.set_xlim(0, 0.8)
@@ -109,7 +137,7 @@ def plot_efficient_frontier_with_risky(risk_free_rate, shortyes,risk_aversion):
     st.pyplot(fig)
 
 def ERC():
-    prices = load_data()
+    prices = load_data(markets, sectors)
     portfolio = pc.Portfolio(prices)
     weights_erc = portfolio.ERC()
     perf = pc.get_performance(prices,weights_erc)
@@ -135,7 +163,7 @@ def ERC():
     return weights_erc, prtfl_return, prtfl_vol, sharpe_ratio
 
 def MDP():
-    prices = load_data()
+    prices = load_data(markets, sectors)
     portfolio = pc.Portfolio(prices)
     weights_mdp = portfolio.MDP()
     perf = pc.get_performance(prices,weights_mdp)
@@ -161,7 +189,7 @@ def MDP():
     return weights_mdp, prtfl_return, prtfl_vol, sharpe_ratio
 
 def EW():
-    prices = load_data()
+    prices = load_data(markets, sectors)
     portfolio = pc.Portfolio(prices)
     weights_eq = portfolio.EW()
     perf = pc.get_performance(prices,weights_eq)
@@ -187,7 +215,7 @@ def EW():
     return weights_eq, prtfl_return, prtfl_vol, sharpe_ratio
 
 def BL():
-    prices = load_data()
+    prices = load_data(markets, sectors)
     portfolio = pc.Portfolio(prices)
     weights_bl = "Not ready yet"
     return weights_bl
@@ -224,6 +252,10 @@ portfolio_choice = st.sidebar.selectbox('Select portfolio', ['Mean variance', 'E
 #changes the page in function of which portfolio is selected in the sidebar
 if portfolio_choice == 'Mean variance':
     st.write('Mean variance portfolio')
+    markets = st.multiselect('Select markets', ['US', 'EU', 'EM'])
+    sectors = st.multiselect('Select sectors', ['Holding Companies', 'Utilities', 'Industrial & Commercial Services', 'Banking & Investment Services', 'Healthcare Services & Equipment',
+                                                'Chemicals', 'Consumer Goods Conglomerates', 'Technology Equipment', 'Software & IT Services', 'Real Estate','Energy - Fossil Fuels',
+                                                'Industrial Goods', 'Applied Resources', 'Mineral Resources', 'Cyclical Consumer Products', 'Transportation', 'Retailers'])
     shortyes = st.checkbox('Short-selling?', value=False)
     riskyes = st.checkbox('Risk-free rate?', value=False)
     if riskyes:
