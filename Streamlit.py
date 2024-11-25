@@ -285,7 +285,7 @@ elif portfolio_choice == 'Equal Risk Contribution':
     if st.button('Compute Equal Risk Contribution Portfolio'):
         if 'erc_results' not in st.session_state:
             # If ERC results are not already computed, call ERC to calculate and store the results
-            weights_erc, return_erc, vol_erc, sharpe_erc = ERC()
+            weights_erc, return_erc, vol_erc, sharpe_erc = ERC(markets, sectors)
         else:
             # Use cached results
             weights_erc = st.session_state.erc_results['weights_erc']
@@ -318,7 +318,7 @@ elif portfolio_choice == 'Most Diversified':
     if st.button('Compute Most Diversified Portfolio'):
         if 'mdp_results' not in st.session_state:
             # If MDP results are not already computed, call MDP to calculate and store the results
-            weights_mdp, return_mdp, vol_mdp, sharpe_mdp = MDP()
+            weights_mdp, return_mdp, vol_mdp, sharpe_mdp = MDP(markets, sectors)
         else:
             # Use cached results
             weights_mdp = st.session_state.mdp_results['weights_mdp']
