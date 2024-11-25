@@ -209,7 +209,7 @@ class Portfolio:
             
     
 class BlackLitterman:
-    def __init__(self, prices, risk_free_rate, short=False):
+    def __init__(self, prices, risk_free_rate=None, short=False):
         ''' Initialize the Black-Litterman object.'''
         self.prices = prices  # DataFrame with historical prices
         self.risk_free_rate = risk_free_rate  # Risk-free rate
@@ -226,22 +226,29 @@ class BlackLitterman:
         self.x0 = np.ones(self.n) / self.n
 
         # If a risk-free rate is provided, modify the mu, vol, and covmat
-        
-        self.mu_mod = np.append(self.mu, self.risk_free_rate)  # Append risk-free rate to the expected returns
-        self.vol_mod = np.append(self.vol, 0)
-        self.covmat_mod = np.zeros((self.n+1, self.n+1))
-        self.covmat_mod[:self.n, :self.n] = self.covmat
-        self.x0_mod = np.ones(self.n+1) / (self.n+1)
-        self.SR = (((self.mu - self.risk_free_rate) / self.vol)@ np.ones(self.n)) / self.n
-
-
-        self.implied_mu = self.risk_free_rate + self.SR * (self.covmat_mod @ self.x0_mod) / np.sqrt(self.x0_mod @ self.covmat_mod @ self.x0_mod)
+        if risk_free_rate is not None:
+            self.mu_mod = np.append(self.mu, self.risk_free_rate)  # Append risk-free rate to the expected returns
+            self.vol_mod = np.append(self.vol, 0)
+            self.covmat_mod = np.zeros((self.n+1, self.n+1))
+            self.covmat_mod[:self.n, :self.n] = self.covmat
+            self.x0_mod = np.ones(self.n+1) / (self.n+1)
+            self.SR = (((self.mu - self.risk_free_rate) / self.vol)@ np.ones(self.n)) / self.n
+            self.implied_mu = self.SR * (self.covmat_mod @ self.x0_mod) / np.sqrt(self.x0_mod @ self.covmat_mod @ self.x0_mod)
+            self.n = self.mu.shape[0]+1
+        else:
+            self.mu_mod = self.returns.mean().values * 252
+            self.vol_mod = self.returns.std().values * np.sqrt(252)
+            self.covmat_mod = self.vol.reshape(1, -1) * self.correl_matrix * self.vol.reshape(-1, 1)
+            self.x0_mod = np.ones(self.n) / self.n
+            self.SR = self.mu / self.vol
+            self.implied_mu = self.risk_free_rate + self.SR * (self.covmat_mod @ self.x0_mod) / np.sqrt(self.x0_mod @ self.covmat_mod @ self.x0_mod)
         self.P = None
         self.Q = None
         self.Omega = None
         self.tau = 0.05
-        self.implied_phi = self.SR/self.vol_mod
-    def QP(x, sigma, mu, gamma ):
+        self.vol_pf = np.sqrt(self.x0 @ self.covmat @ self.x0)
+        self.implied_phi = self.SR/self.vol_pf
+    def QP(self, x, sigma, mu, gamma ):
     
         v = 0.5 * x.T @ sigma @ x - gamma * x.T @ mu
     
@@ -258,36 +265,46 @@ class BlackLitterman:
             self.P = np.vstack((self.P, P))
             self.Q = np.append(self.Q, Q)
             self.Omega = sp.linalg.block_diag(self.Omega, Omega)
+
+    def delete_view(self, index):
+        '''Delete views from the Black-Litterman model.'''
+        self.P = np.delete(self.P, index, axis=0)
+        self.Q = np.delete(self.Q, index)
+        self.Omega = np.delete(self.Omega, index)
+    def delete_all_views(self):
+        '''Delete views from the Black-Litterman model.'''
+        self.P = None
+        self.Q = None
+        self.Omega = None
+
     def gamma_matrix(self,tau):
         return tau * self.covmat_mod
 
-    def target_tau(self, x_start, target_vol):
-        '''Compute the target tau for the Black-Litterman model.'''
-        constraints = [LinearConstraint(np.ones(self.x0_mod.shape), ub = 1), 
-               LinearConstraint(-np.ones(self.x0_mod.shape), ub = -1),
-              LinearConstraint(np.eye(self.x0_mod.shape[0]), lb = 0)]
-        mu_bar = self.implied_mu + (self.gamma_matrix(self.x0) @ self.P.T) @ np.linalg.inv(self.P @ self.gamma_matrix(self.x0) @ self.P.T + self.omega) @ (self.Q - self.P @ self.implied_mu)
+    def target_TE(self, x, target):
+        '''Compute the optimal tau for a given target volatility.'''
+        constraints = LinearConstraint(np.ones(self.n), lb=1, ub=1)  # Adjust constraint
+        bounds = [(None, None) for _ in range(self.n)]  # Short-selling allowed
         gam = 1/self.implied_phi
-        res = minimize(self.QP, self.x0, args = (self.covmat_mod, mu_bar, gam) , options={'disp': False}, constraints = constraints)
+        mu_bar = self.implied_mu + (self.gamma_matrix(x) @ self.P.T) @ np.linalg.inv(self.P @ self.gamma_matrix(x) @ self.P.T + self.Omega) @ (self.Q - self.P @ self.implied_mu)
+        res = minimize(self.QP, self.x0_mod, args = (self.covmat_mod, mu_bar, gam) , options={'disp': False}, constraints = constraints, bounds=bounds)
         optimized_weights = res.x
-        return np.sqrt((optimized_weights-self.x0_mod) @ self.covmat_mod @ (optimized_weights-self.x0_mod)) - target_vol
+        return np.sqrt((optimized_weights-self.x0_mod) @ self.covmat_mod @ (optimized_weights-self.x0_mod)) - target
 
     def optimal_tau(self):
-        opti_tau = fsolve(self.target_tau, x_start = 0.05, args = 0.02)[0]
+        opti_tau = fsolve(self.target_TE, x0 = 0.05, args = 0.02)[0]
         return opti_tau
 
     def BL(self,tau):
         '''Compute the Black-Litterman portfolio.'''
         if self.P is None:
             raise ValueError('No views added to the model.')
-        
-        constraints = [LinearConstraint(np.ones(self.x0_mod.shape), ub = 1), 
-               LinearConstraint(-np.ones(self.x0_mod.shape), ub = -1),
-              LinearConstraint(np.eye(self.x0_mod.shape[0]), lb = 0)]
+        constraints = LinearConstraint(np.ones(self.n), lb=1, ub=1)  # Adjust constraint
+        bounds = [(None, None) for _ in range(self.n)]  # Short-selling allowed
+
 
         mu_bar = self.implied_mu + (self.gamma_matrix(tau) @ self.P.T) @ np.linalg.inv(self.P @ self.gamma_matrix(tau) @ self.P.T + self.Omega) @ (self.Q - self.P @ self.implied_mu)
         gam = 1/self.implied_phi
-        res = minimize(self.QP, self.x0_mod, args = (self.covmat_mod, mu_bar, gam) , options={'disp': False}, constraints = constraints)
+        res = minimize(self.QP, self.x0_mod, args = (self.covmat_mod, mu_bar, gam) , options={'disp': False}, constraints = constraints,bounds=bounds)
         optimized_weights_bl = res.x
     
         return optimized_weights_bl

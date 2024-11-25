@@ -232,11 +232,60 @@ def EW(markets, sectors):
 
     return weights_eq, prtfl_return, prtfl_vol, sharpe_ratio
 
-def BL():
+def BL(markets,sectors,risk_free_rate=None):
     prices = load_data(markets, sectors)
-    portfolio = pc.Portfolio(prices)
-    weights_bl = "Not ready yet"
-    return weights_bl
+    if st.session_state.BL is None:
+        black_litterman = pc.BlackLitterman(prices,risk_free_rate=risk_free_rate)
+        mv = pc.EfficientFrontier(prices,risk_free_rate=risk_free_rate,short=True)
+        weights_bl = mv.efficient_frontier(mv.n+1,mv.x0_mod,mv.covmat_mod,mv.mu_mod,1/black_litterman.implied_phi)[2]
+    else:
+        black_litterman = pc.BlackLitterman(prices,risk_free_rate=risk_free_rate)
+        P = np.zeros((len(st.session_state.BL),len(prices.columns)+1))#+1 for the risk free asset
+        Q = np.zeros(len(st.session_state.BL))
+        omega = np.zeros((len(st.session_state.BL),len(st.session_state.BL)))
+        for i in range(len(st.session_state.BL)):
+            P[i,prices.columns.get_loc(st.session_state.BL['Asset'].iloc[i])] = 1
+            Q[i] = 0.5 if st.session_state.BL['View'].iloc[i] == 'Bullish' else -0.5
+            omega[i, i] = 0.03 if st.session_state.BL['Confidence level'].iloc[i] == 'Certain' else 0.1 if st.session_state.BL['Confidence level'].iloc[i] == 'Moderate' else 0.3
+        black_litterman.add_views(P, Q, omega)
+        opt_tau = black_litterman.optimal_tau()
+        weights_bl = black_litterman.BL(tau=opt_tau)
+        #add the risk free asset to the prices
+    prices['Risk Free Asset'] = risk_free_rate
+
+
+    perf = pc.get_performance(prices,weights_bl)
+    perf.index = pd.to_datetime(perf.index)
+    fig, ax = plt.subplots()
+    ax.plot(perf)
+    ax.xaxis.set_major_locator(mdates.MonthLocator(bymonth=(1,7)))
+    ax.xaxis.set_minor_locator(mdates.MonthLocator())
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
+    st.session_state.bl_plot = fig  # Save the plot to session state
+
+    #Metrics
+    if risk_free_rate is not None:
+        prtfl_return = np.dot(black_litterman.mu_mod, weights_bl)
+        prtfl_vol = np.sqrt(weights_bl @ black_litterman.covmat_mod @ weights_bl)
+        risk_free_rate = black_litterman.risk_free_rate if black_litterman.risk_free_rate is not None else 0
+        sharpe_ratio = (prtfl_return - risk_free_rate) / prtfl_vol
+    else:
+        prtfl_return = np.dot(black_litterman.mu, weights_bl)
+        prtfl_vol = np.sqrt(weights_bl @ black_litterman.covmat @ weights_bl)
+        risk_free_rate = black_litterman.risk_free_rate if black_litterman.risk_free_rate is not None else 0
+        sharpe_ratio = (prtfl_return - risk_free_rate) / prtfl_vol
+
+    # Store results in session_state for reuse
+    st.session_state.bl_results = {
+        'weights_bl': weights_bl,
+        'return_bl': prtfl_return,
+        'vol_bl': prtfl_vol,
+        'sharpe_bl': sharpe_ratio,
+        'perf': perf
+    }
+
+    return weights_bl, prtfl_return, prtfl_vol, sharpe_ratio
 
 
 ####### Bot Control Functions
@@ -364,31 +413,67 @@ elif portfolio_choice == 'Most Diversified':
 
 elif portfolio_choice == 'Black Litterman':
     st.write('Black Litterman portfolio')
+    st.write('Be careful as changing the markets and sectors will reset the views.')
     markets = st.multiselect('Select markets', ['US', 'EU', 'EM'])
     sectors = st.multiselect('Select sectors', ['Holding Companies', 'Utilities', 'Industrial & Commercial Services', 'Banking & Investment Services', 'Healthcare Services & Equipment',
                                                 'Chemicals', 'Consumer Goods Conglomerates', 'Technology Equipment', 'Software & IT Services', 'Real Estate','Energy - Fossil Fuels',
                                                 'Industrial Goods', 'Applied Resources', 'Mineral Resources', 'Cyclical Consumer Products', 'Transportation', 'Retailers'])
-    price = load_data(markets, sectors)
-    name_assets = price.columns
+    if (markets == []) or (sectors == []):
+        price = load_data(['US', 'EU', 'EM'], ['Holding Companies', 'Utilities', 'Industrial & Commercial Services', 'Banking & Investment Services', 'Healthcare Services & Equipment',
+                                                'Chemicals', 'Consumer Goods Conglomerates', 'Technology Equipment', 'Software & IT Services', 'Real Estate','Energy - Fossil Fuels',
+                                                'Industrial Goods', 'Applied Resources', 'Mineral Resources', 'Cyclical Consumer Products', 'Transportation', 'Retailers'])
+        name_assets = price.columns
+    else:
+        price = load_data(markets, sectors)
+        name_assets = price.columns
     select_asset = st.selectbox('Select option', (name_assets))
     views = st.selectbox('Views', ['Bullish', 'Bearish'])
-    col1, col2, col3 = st.columns(3)
+    uncertainty = st.selectbox('How confident are you of your view?', ['Certain', 'Moderate', 'Uncertain'])
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
         if st.button('Add view'):
             if st.session_state.BL is None:
                 st.session_state.BL = pd.DataFrame(columns=['Asset', 'View'])
-                st.session_state.BL = pd.DataFrame({'Asset': [select_asset], 'View': [views]})
+                st.session_state.BL = pd.DataFrame({'Asset': [select_asset], 'View': [views], 'Confidence level': [uncertainty]})
             else:
-                st.session_state.BL = pd.concat([st.session_state.BL, pd.DataFrame({'Asset': [select_asset], 'View': [views]})])
+                st.session_state.BL = pd.concat([st.session_state.BL, pd.DataFrame({'Asset': [select_asset], 'View': [views], 'Confidence level': [uncertainty]})])
             st.write('View added')
             st.write(st.session_state.BL)
     with col2:
         if st.button('Show views'):
             st.write(st.session_state.BL)
     with col3:
-        if st.button('Clean views'):
+        if st.button('Delete view'):
+            st.session_state.BL = st.session_state.BL[st.session_state.BL['Asset'] != select_asset]
+            st.write('View deleted')
+            st.write(st.session_state.BL)
+    with col4:
+        if st.button('Delete all views'):
             st.session_state.BL = None
-            st.write('Views cleaned')
+            st.write('Views deleted')
+    if st.button('Compute Black Litterman Portfolio'):
+        #check if the views are in the markets and sectors selected
+        if st.session_state.BL is None:
+            weights_bl, return_bl, vol_bl, sharpe_mdp = BL(markets, sectors, risk_free_rate=0.03)
+            st.pyplot(st.session_state.bl_plot)
+            st.write(weights_bl)
+            st.write(f'Returns of Portfolio: {return_bl}')
+            st.write(f'Volatility of Portfolio: {vol_bl}')
+            st.write(f'Sharpe Ratio of Portfolio: {sharpe_mdp}')
+
+        else:
+            if not all(st.session_state.BL['Asset'].isin(price.columns)):
+                st.warning('Some assets in the views are not in the selected markets and sectors.')
+            else:
+                weights_bl, return_bl, vol_bl, sharpe_mdp = BL(markets, sectors, risk_free_rate=0.03)
+                st.pyplot(st.session_state.bl_plot)
+                st.write(weights_bl)
+                st.write(f'Returns of Portfolio: {return_bl}')
+                st.write(f'Volatility of Portfolio: {vol_bl}')
+                st.write(f'Sharpe Ratio of Portfolio: {sharpe_mdp}')
+                    
+    else:
+        st.write('Click the button above to compute the Black Litterman portfolio.')
         
 
 
