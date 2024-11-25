@@ -1,3 +1,4 @@
 # Ignore Python bytecode files
 *.pyc
 .DS_Store
+launch.json

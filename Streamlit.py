@@ -280,12 +280,14 @@ elif portfolio_choice == 'Equal Risk Contribution':
                                                 'Software & IT Services', 'Real Estate', 'Energy - Fossil Fuels',
                                                 'Industrial Goods', 'Applied Resources', 'Mineral Resources', 
                                                 'Cyclical Consumer Products', 'Transportation', 'Retailers'])
-    
+
     # Add a button to trigger computation
     if st.button('Compute Equal Risk Contribution Portfolio'):
-        if 'erc_results' not in st.session_state:
+        if 'erc_results' not in st.session_state or markets != st.session_state.markets or sectors != st.session_state.sectors:
             # If ERC results are not already computed, call ERC to calculate and store the results
             weights_erc, return_erc, vol_erc, sharpe_erc = ERC(markets, sectors)
+            st.session_state.sectors = sectors
+            st.session_state.markets = markets
         else:
             # Use cached results
             weights_erc = st.session_state.erc_results['weights_erc']
@@ -302,6 +304,8 @@ elif portfolio_choice == 'Equal Risk Contribution':
         st.write(f'Sharpe Ratio of Portfolio: {sharpe_erc}')
     else:
         st.write('Click the button above to compute the Equal Risk Contribution portfolio.')
+        st.session_state.sectors = None
+        st.session_state.markets = None
 
 
 elif portfolio_choice == 'Most Diversified':
@@ -316,9 +320,11 @@ elif portfolio_choice == 'Most Diversified':
     
     # Add a button to trigger computation
     if st.button('Compute Most Diversified Portfolio'):
-        if 'mdp_results' not in st.session_state:
+        if 'mdp_results' not in st.session_state or markets != st.session_state.markets or sectors != st.session_state.sectors:
             # If MDP results are not already computed, call MDP to calculate and store the results
             weights_mdp, return_mdp, vol_mdp, sharpe_mdp = MDP(markets, sectors)
+            st.session_state.sectors = sectors
+            st.session_state.markets = markets
         else:
             # Use cached results
             weights_mdp = st.session_state.mdp_results['weights_mdp']
@@ -335,7 +341,8 @@ elif portfolio_choice == 'Most Diversified':
         st.write(f'Sharpe Ratio of Portfolio: {sharpe_mdp}')
     else:
         st.write('Click the button above to compute the Most Diversified portfolio.')
-
+        st.session_state.sectors = None
+        st.session_state.markets = None
 
 elif portfolio_choice == 'Black Litterman':
     st.write('Black Litterman portfolio')
@@ -379,9 +386,11 @@ elif portfolio_choice == 'Equally weighted':
     
     # Add a button to trigger computation
     if st.button('Compute Equally Weighted Portfolio'):
-        if 'eq_results' not in st.session_state:
+        if 'eq_results' not in st.session_state or markets != st.session_state.markets or sectors != st.session_state.sectors:
             # If eq results are not already computed, call EW to calculate and store the results
             weights_eq, return_eq, vol_eq, sharpe_eq = EW(markets, sectors)
+            st.session_state.sectors = sectors
+            st.session_state.markets = markets
         else:
             # Use cached results
             weights_eq = st.session_state.eq_results['weights_eq']
@@ -398,6 +407,8 @@ elif portfolio_choice == 'Equally weighted':
         st.write(f'Sharpe Ratio of Portfolio: {sharpe_eq}')
     else:
         st.write('Click the button above to compute the equally weighted portfolio.')
+        st.session_state.sectors = None
+        st.session_state.markets = None
 
 
 
