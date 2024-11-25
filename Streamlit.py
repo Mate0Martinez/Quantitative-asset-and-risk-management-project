@@ -136,7 +136,7 @@ def plot_efficient_frontier_with_risky(risk_free_rate, shortyes,risk_aversion):
     
     st.pyplot(fig)
 
-def ERC():
+def ERC(markets, sectors):
     prices = load_data(markets, sectors)
     portfolio = pc.Portfolio(prices)
     weights_erc = portfolio.ERC()
@@ -162,7 +162,7 @@ def ERC():
 
     return weights_erc, prtfl_return, prtfl_vol, sharpe_ratio
 
-def MDP():
+def MDP(markets, sectors):
     prices = load_data(markets, sectors)
     portfolio = pc.Portfolio(prices)
     weights_mdp = portfolio.MDP()
@@ -188,7 +188,7 @@ def MDP():
 
     return weights_mdp, prtfl_return, prtfl_vol, sharpe_ratio
 
-def EW():
+def EW(markets, sectors):
     prices = load_data(markets, sectors)
     portfolio = pc.Portfolio(prices)
     weights_eq = portfolio.EW()
@@ -272,50 +272,78 @@ if portfolio_choice == 'Mean variance':
 
    
 elif portfolio_choice == 'Equal Risk Contribution':
-    st.write('Equal Risk Contribution portfolio')
-    if 'erc_results' not in st.session_state:
-        # If ERC results are not already computed, call ERC to calculate and store the results
-        weights_erc, return_erc, vol_erc, sharpe_erc = ERC()
+    st.write('Equal Risk Contribution Portfolio')
+    markets = st.multiselect('Select markets', ['US', 'EU', 'EM'])
+    sectors = st.multiselect('Select sectors', ['Holding Companies', 'Utilities', 'Industrial & Commercial Services', 
+                                                'Banking & Investment Services', 'Healthcare Services & Equipment',
+                                                'Chemicals', 'Consumer Goods Conglomerates', 'Technology Equipment', 
+                                                'Software & IT Services', 'Real Estate', 'Energy - Fossil Fuels',
+                                                'Industrial Goods', 'Applied Resources', 'Mineral Resources', 
+                                                'Cyclical Consumer Products', 'Transportation', 'Retailers'])
+    
+    # Add a button to trigger computation
+    if st.button('Compute Equal Risk Contribution Portfolio'):
+        if 'erc_results' not in st.session_state:
+            # If ERC results are not already computed, call ERC to calculate and store the results
+            weights_erc, return_erc, vol_erc, sharpe_erc = ERC()
+        else:
+            # Use cached results
+            weights_erc = st.session_state.erc_results['weights_erc']
+            return_erc = st.session_state.erc_results['return_erc']
+            vol_erc = st.session_state.erc_results['vol_erc']
+            sharpe_erc = st.session_state.erc_results['sharpe_erc']
+
+        if 'erc_plot' in st.session_state:  # Retain the plot if it exists
+            st.pyplot(st.session_state.erc_plot)
+
+        st.write(weights_erc)
+        st.write(f'Returns of Portfolio: {return_erc}')
+        st.write(f'Volatility of Portfolio: {vol_erc}')
+        st.write(f'Sharpe Ratio of Portfolio: {sharpe_erc}')
     else:
-        # Use cached results
-        weights_erc = st.session_state.erc_results['weights_erc']
-        return_erc = st.session_state.erc_results['return_erc']
-        vol_erc = st.session_state.erc_results['vol_erc']
-        sharpe_erc = st.session_state.erc_results['sharpe_erc']
-    
-    if 'erc_plot' in st.session_state: # so that if you rerun erc opti, you still have the plot. Otherwise the plot disappears when rerunning
-        st.pyplot(st.session_state.erc_plot)
-    
-    st.write(weights_erc)
-    st.write(f'Returns of Portfolio: {return_erc}')
-    st.write(f'Volatility of Portfolio: {vol_erc}')
-    st.write(f'Sharpe Ratio of Portfolio: {sharpe_erc}')
-    st.write()
+        st.write('Click the button above to compute the Equal Risk Contribution portfolio.')
+
 
 elif portfolio_choice == 'Most Diversified':
-    st.write('Most Diversified portfolio')
-    if 'mdp_results' not in st.session_state:
-        # If mdp results are not already computed, call mdp to calculate and store the results
-        weights_mdp, return_mdp, vol_mdp, sharpe_mdp = MDP()
+    st.write('Most Diversified Portfolio')
+    markets = st.multiselect('Select markets', ['US', 'EU', 'EM'])
+    sectors = st.multiselect('Select sectors', ['Holding Companies', 'Utilities', 'Industrial & Commercial Services', 
+                                                'Banking & Investment Services', 'Healthcare Services & Equipment',
+                                                'Chemicals', 'Consumer Goods Conglomerates', 'Technology Equipment', 
+                                                'Software & IT Services', 'Real Estate', 'Energy - Fossil Fuels',
+                                                'Industrial Goods', 'Applied Resources', 'Mineral Resources', 
+                                                'Cyclical Consumer Products', 'Transportation', 'Retailers'])
+    
+    # Add a button to trigger computation
+    if st.button('Compute Most Diversified Portfolio'):
+        if 'mdp_results' not in st.session_state:
+            # If MDP results are not already computed, call MDP to calculate and store the results
+            weights_mdp, return_mdp, vol_mdp, sharpe_mdp = MDP()
+        else:
+            # Use cached results
+            weights_mdp = st.session_state.mdp_results['weights_mdp']
+            return_mdp = st.session_state.mdp_results['return_mdp']
+            vol_mdp = st.session_state.mdp_results['vol_mdp']
+            sharpe_mdp = st.session_state.mdp_results['sharpe_mdp']
+
+        if 'mdp_plot' in st.session_state:  # Retain the plot if it exists
+            st.pyplot(st.session_state.mdp_plot)
+
+        st.write(weights_mdp)
+        st.write(f'Returns of Portfolio: {return_mdp}')
+        st.write(f'Volatility of Portfolio: {vol_mdp}')
+        st.write(f'Sharpe Ratio of Portfolio: {sharpe_mdp}')
     else:
-        # Use cached results
-        weights_mdp = st.session_state.mdp_results['weights_mdp']
-        return_mdp = st.session_state.mdp_results['return_mdp']
-        vol_mdp = st.session_state.mdp_results['vol_mdp']
-        sharpe_mdp = st.session_state.mdp_results['sharpe_mdp']
-    
-    if 'mdp_plot' in st.session_state: # so that if you rerun erc opti, you still have the plot. Otherwise the plot disappears when rerunning
-        st.pyplot(st.session_state.mdp_plot)
-    
-    st.write(weights_mdp)
-    st.write(f'Returns of Portfolio: {return_mdp}')
-    st.write(f'Volatility of Portfolio: {vol_mdp}')
-    st.write(f'Sharpe Ratio of Portfolio: {sharpe_mdp}')
-    st.write()
+        st.write('Click the button above to compute the Most Diversified portfolio.')
+
 
 elif portfolio_choice == 'Black Litterman':
     st.write('Black Litterman portfolio')
-    price = load_data()
+    markets = st.multiselect('Select markets', ['US', 'EU', 'EM'])
+    sectors = st.multiselect('Select sectors', ['Holding Companies', 'Utilities', 'Industrial & Commercial Services', 'Banking & Investment Services', 'Healthcare Services & Equipment',
+                                                'Chemicals', 'Consumer Goods Conglomerates', 'Technology Equipment', 'Software & IT Services', 'Real Estate','Energy - Fossil Fuels',
+                                                'Industrial Goods', 'Applied Resources', 'Mineral Resources', 'Cyclical Consumer Products', 'Transportation', 'Retailers'])
+    price = load_data(markets, sectors)
     name_assets = price.columns
     select_asset = st.selectbox('Select option', (name_assets))
     views = st.selectbox('Views', ['Bullish', 'Bearish'])
@@ -340,25 +368,36 @@ elif portfolio_choice == 'Black Litterman':
 
 
 elif portfolio_choice == 'Equally weighted':
-    st.write('Equally weighted portfolio')
-    if 'eq_results' not in st.session_state:
-        # If eq results are not already computed, call eq to calculate and store the results
-        weights_eq, return_eq, vol_eq, sharpe_eq = EW()
+    st.write('Equally Weighted Portfolio')
+    markets = st.multiselect('Select markets', ['US', 'EU', 'EM'])
+    sectors = st.multiselect('Select sectors', ['Holding Companies', 'Utilities', 'Industrial & Commercial Services', 
+                                                'Banking & Investment Services', 'Healthcare Services & Equipment',
+                                                'Chemicals', 'Consumer Goods Conglomerates', 'Technology Equipment', 
+                                                'Software & IT Services', 'Real Estate', 'Energy - Fossil Fuels',
+                                                'Industrial Goods', 'Applied Resources', 'Mineral Resources', 
+                                                'Cyclical Consumer Products', 'Transportation', 'Retailers'])
+    
+    # Add a button to trigger computation
+    if st.button('Compute Equally Weighted Portfolio'):
+        if 'eq_results' not in st.session_state:
+            # If eq results are not already computed, call EW to calculate and store the results
+            weights_eq, return_eq, vol_eq, sharpe_eq = EW(markets, sectors)
+        else:
+            # Use cached results
+            weights_eq = st.session_state.eq_results['weights_eq']
+            return_eq = st.session_state.eq_results['return_eq']
+            vol_eq = st.session_state.eq_results['vol_eq']
+            sharpe_eq = st.session_state.eq_results['sharpe_eq']
+
+        if 'eq_plot' in st.session_state:  # Retain the plot if it exists
+            st.pyplot(st.session_state.eq_plot)
+
+        st.write(weights_eq)
+        st.write(f'Returns of Portfolio: {return_eq}')
+        st.write(f'Volatility of Portfolio: {vol_eq}')
+        st.write(f'Sharpe Ratio of Portfolio: {sharpe_eq}')
     else:
-        # Use cached results
-        weights_eq = st.session_state.eq_results['weights_eq']
-        return_eq = st.session_state.eq_results['return_eq']
-        vol_eq = st.session_state.eq_results['vol_eq']
-        sharpe_eq = st.session_state.eq_results['sharpe_eq']
-    
-    if 'eq_plot' in st.session_state: # so that if you rerun eq opti, you still have the plot. Otherwise the plot disappears when rerunning
-        st.pyplot(st.session_state.eq_plot)
-    
-    st.write(weights_eq)
-    st.write(f'Returns of Portfolio: {return_eq}')
-    st.write(f'Volatility of Portfolio: {vol_eq}')
-    st.write(f'Sharpe Ratio of Portfolio: {sharpe_eq}')
-    st.write()
+        st.write('Click the button above to compute the equally weighted portfolio.')
 
 
 
