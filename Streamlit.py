@@ -16,6 +16,7 @@ import streamlit as st #ignore the warning, if streamlit is installed correctly 
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import Portfolio_classes as pc
 import threading
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -141,8 +142,15 @@ def ERC(markets, sectors):
     portfolio = pc.Portfolio(prices)
     weights_erc = portfolio.ERC()
     perf = pc.get_performance(prices,weights_erc)
+    perf.index = pd.to_datetime(perf.index)
     fig, ax = plt.subplots()
     ax.plot(perf)
+    ax.xaxis.set_major_locator(mdates.MonthLocator(bymonth=(1,7)))
+    ax.xaxis.set_minor_locator(mdates.MonthLocator())
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
+    
+
     st.session_state.erc_plot = fig  # Save the plot to session state
 
     # Metrics
@@ -167,8 +175,13 @@ def MDP(markets, sectors):
     portfolio = pc.Portfolio(prices)
     weights_mdp = portfolio.MDP()
     perf = pc.get_performance(prices,weights_mdp)
+    perf.index = pd.to_datetime(perf.index)
     fig, ax = plt.subplots()
     ax.plot(perf)
+    ax.xaxis.set_major_locator(mdates.MonthLocator(bymonth=(1,7)))
+    ax.xaxis.set_minor_locator(mdates.MonthLocator())
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
     st.session_state.mdp_plot = fig  # Save the plot to session state
 
     # Metrics
@@ -193,8 +206,13 @@ def EW(markets, sectors):
     portfolio = pc.Portfolio(prices)
     weights_eq = portfolio.EW()
     perf = pc.get_performance(prices,weights_eq)
+    perf.index = pd.to_datetime(perf.index)
     fig, ax = plt.subplots()
     ax.plot(perf)
+    ax.xaxis.set_major_locator(mdates.MonthLocator(bymonth=(1,7)))
+    ax.xaxis.set_minor_locator(mdates.MonthLocator())
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
     st.session_state.eq_plot = fig  # Save the plot to session state
 
     #Metrics
