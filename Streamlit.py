@@ -20,9 +20,11 @@ import matplotlib.dates as mdates
 import Portfolio_classes as pc
 import threading
 from apscheduler.schedulers.background import BackgroundScheduler
+import multiprocessing
+import time
+from TradeBot import bot_class as tb
+import logging
 
-scheduler = BackgroundScheduler()
-scheduler.add_jobstore('memory')  # Ensure jobs are stored in memory
 
 #STATE INITIALIZATION
 #state is used to store the data that is gonna be used in the app
@@ -291,7 +293,7 @@ def BL(markets,sectors,risk_free_rate=None):
 
 
 ####### Bot Control Functions
-def start_hft_bot():
+#def start_hft_bot():
     import logging
     logging.basicConfig(level=logging.INFO)  # Avoid scheduler warnings
     if not scheduler.running:  # Prevent multiple scheduler starts
@@ -300,7 +302,7 @@ def start_hft_bot():
         bot_thread.daemon = True  # Ensure thread closes when Streamlit stops
         bot_thread.start()
 
-def stop_hft_bot():
+#def stop_hft_bot():
     if scheduler.running:  # Safely stop the scheduler
         scheduler.shutdown(wait=False)  # Ensure the scheduler stops immediately
     st.session_state.bot_active = False
@@ -519,29 +521,110 @@ elif portfolio_choice == 'Equally weighted':
 
 
 ###### Bot Control in Sidebar
-st.sidebar.title("Trading Bot Control")
-if st.sidebar.checkbox("Activate Trading Bot", value=False):
-    if not st.session_state.bot_active:
-        st.sidebar.warning("Starting the bot...")
-        start_hft_bot()
-        st.session_state.bot_active = True
-        st.sidebar.success("Bot is running!")
-    else:
-        st.sidebar.info("Bot is already active.")
-else:
-    if st.session_state.bot_active:
-        stop_hft_bot()
-        st.sidebar.info("Bot has been stopped.")
+#st.sidebar.title("Trading Bot Control")
+#if st.sidebar.checkbox("Activate Trading Bot", value=False):
+#    if not st.session_state.bot_active:
+#        st.sidebar.warning("Starting the bot...")
+#        start_hft_bot()
+#        st.session_state.bot_active = True
+#        st.sidebar.success("Bot is running!")
+#    else:
+#        st.sidebar.info("Bot is already active.")
+#else:
+#    if st.session_state.bot_active:
+#        stop_hft_bot()
+#        st.sidebar.info("Bot has been stopped.")
 ######
 
-if st.session_state.bot_active:
-    st.success("The bot is currently running.")
-else:
-    st.warning("The bot is not active.")
+#if st.session_state.bot_active:
+#    st.success("The bot is currently running.")
+#else:
+#    st.warning("The bot is not active.")
 
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+# Global variable to hold the bot process
+bot_process = None
+
+# Function to start the bot
+def start_bot():
+    global bot_process
+    if bot_process is None or not bot_process.is_alive():
+        bot_process = multiprocessing.Process(target=run_bot)
+        
+        bot_process.start()
+        st.success("Trading bot started successfully.")
+    else:
+        st.warning("Trading bot is already running.")
+
+# Function to stop the bot
+def stop_bot():
+    global bot_process
+    if bot_process and bot_process.is_alive():
+        bot_process.terminate()
+        bot_process.join()
+        bot_process = None
+        st.success("Trading bot stopped successfully.")
+    else:
+        st.warning("No trading bot is currently running.")
+
+# Function to run the bot
+def run_bot():
+    scheduler = BackgroundScheduler()
+    bot = tb.TradingBot()  # Initialize the bot
+    scheduler.add_job(
+    bot.trading_MAV,
+    'cron',
+    day_of_week='mon-fri',
+    hour='0-23',
+    minute='*', # * is every minute, can change it easily to 15 for example 1,16,31,46
+    #start_date='2024-01-12 12:00:00',
+    #europe paris timezone
+    timezone='Europe/Paris'
+    )
+    scheduler.start()  # Start the scheduler
+    logging.info("Scheduler started and job added.")
+    scheduler.print_jobs()
+
+    # Keep the scheduler running
+    try:
+        while True:
+            time.sleep(1)
+    except (KeyboardInterrupt, SystemExit):
+        scheduler.shutdown()
+        logging.info("Scheduler shut down.")
+# Streamlit UI
+st.title("Trading Bot Control Panel")
+
+# Start button
+if st.button("Start Trading Bot"):
+    start_bot()
+
+# Stop button
+if st.button("Stop Trading Bot"):
+    stop_bot()
+
+# Bot status
+if bot_process and bot_process.is_alive():
+    st.info("Trading bot is currently running.")
+else:
+    st.info("Trading bot is not running.")
+
+# Placeholder for logs or performance updates
+st.write("Check logs for trading bot updates or trades execution.")
 
 # Placeholder for future functionality
 st.write('This is a placeholder for future functionality.')
 
+import atexit
+atexit.register(lambda: scheduler_shutdown())
 
+def scheduler_shutdown():
+    if bot_process and bot_process.is_alive():
+        bot_process.terminate()
+        bot_process.join()
+        logging.info("Scheduler shut down.")
+    else:
+        logging.info("Scheduler was not running.")
 
