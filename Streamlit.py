@@ -235,9 +235,11 @@ def EW(markets, sectors):
 def BL(markets,sectors,risk_free_rate=None):
     prices = load_data(markets, sectors)
     if st.session_state.BL is None:
-        black_litterman = pc.BlackLitterman(prices,risk_free_rate=risk_free_rate)
-        mv = pc.EfficientFrontier(prices,risk_free_rate=risk_free_rate,short=True)
-        weights_bl = mv.efficient_frontier(mv.n+1,mv.x0_mod,mv.covmat_mod,mv.mu_mod,1/black_litterman.implied_phi)[2]
+        st.write('No views added, if you want to see a normal mean variance portfolio go to the mean variance portfolio page')
+        #black_litterman = pc.BlackLitterman(prices,risk_free_rate=risk_free_rate)
+        #mv = pc.EfficientFrontier(prices,risk_free_rate=risk_free_rate,short=True)
+        #st.write(1/black_litterman.implied_phi)
+        #weights_bl = mv.efficient_frontier(mv.n+1,mv.x0_mod,mv.covmat_mod,mv.mu_mod,1/black_litterman.implied_phi)[2]
     else:
         black_litterman = pc.BlackLitterman(prices,risk_free_rate=risk_free_rate)
         P = np.zeros((len(st.session_state.BL),len(prices.columns)+1))#+1 for the risk free asset
@@ -245,8 +247,8 @@ def BL(markets,sectors,risk_free_rate=None):
         omega = np.zeros((len(st.session_state.BL),len(st.session_state.BL)))
         for i in range(len(st.session_state.BL)):
             P[i,prices.columns.get_loc(st.session_state.BL['Asset'].iloc[i])] = 1
-            Q[i] = 0.5 if st.session_state.BL['View'].iloc[i] == 'Bullish' else -0.5
-            omega[i, i] = 0.03 if st.session_state.BL['Confidence level'].iloc[i] == 'Certain' else 0.1 if st.session_state.BL['Confidence level'].iloc[i] == 'Moderate' else 0.3
+            Q[i] = 0.1 if st.session_state.BL['View'].iloc[i] == 'Bullish' else -0.1
+            omega[i, i] = 0.01 if st.session_state.BL['Confidence level'].iloc[i] == 'Certain' else 0.05 if st.session_state.BL['Confidence level'].iloc[i] == 'Moderate' else 0.1
         black_litterman.add_views(P, Q, omega)
         opt_tau = black_litterman.optimal_tau()
         weights_bl = black_litterman.BL(tau=opt_tau)
@@ -454,12 +456,13 @@ elif portfolio_choice == 'Black Litterman':
     if st.button('Compute Black Litterman Portfolio'):
         #check if the views are in the markets and sectors selected
         if st.session_state.BL is None:
-            weights_bl, return_bl, vol_bl, sharpe_mdp = BL(markets, sectors, risk_free_rate=0.03)
-            st.pyplot(st.session_state.bl_plot)
-            st.write(weights_bl)
-            st.write(f'Returns of Portfolio: {return_bl}')
-            st.write(f'Volatility of Portfolio: {vol_bl}')
-            st.write(f'Sharpe Ratio of Portfolio: {sharpe_mdp}')
+            st.warning('No views added, if you want to see a normal mean variance portfolio go to the mean variance portfolio page')
+            #weights_bl, return_bl, vol_bl, sharpe_mdp = BL(markets, sectors, risk_free_rate=0.03)
+            #st.pyplot(st.session_state.bl_plot)
+            #st.write(weights_bl)
+            #st.write(f'Returns of Portfolio: {return_bl}')
+            #st.write(f'Volatility of Portfolio: {vol_bl}')
+            #st.write(f'Sharpe Ratio of Portfolio: {sharpe_mdp}')
 
         else:
             if not all(st.session_state.BL['Asset'].isin(price.columns)):
