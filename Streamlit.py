@@ -292,22 +292,7 @@ def BL(markets,sectors,risk_free_rate=None):
     return weights_bl, prtfl_return, prtfl_vol, sharpe_ratio
 
 
-####### Bot Control Functions
-#def start_hft_bot():
-    import logging
-    logging.basicConfig(level=logging.INFO)  # Avoid scheduler warnings
-    if not scheduler.running:  # Prevent multiple scheduler starts
-        scheduler.start()
-        bot_thread = threading.Thread(target=scheduler.start)
-        bot_thread.daemon = True  # Ensure thread closes when Streamlit stops
-        bot_thread.start()
 
-#def stop_hft_bot():
-    if scheduler.running:  # Safely stop the scheduler
-        scheduler.shutdown(wait=False)  # Ensure the scheduler stops immediately
-    st.session_state.bot_active = False
-    st.sidebar.info("Bot has been stopped.")
-#######
 
 #MAIN PART OF THE SITE
 
@@ -520,21 +505,7 @@ elif portfolio_choice == 'Equally weighted':
 
 
 
-###### Bot Control in Sidebar
-#st.sidebar.title("Trading Bot Control")
-#if st.sidebar.checkbox("Activate Trading Bot", value=False):
-#    if not st.session_state.bot_active:
-#        st.sidebar.warning("Starting the bot...")
-#        start_hft_bot()
-#        st.session_state.bot_active = True
-#        st.sidebar.success("Bot is running!")
-#    else:
-#        st.sidebar.info("Bot is already active.")
-#else:
-#    if st.session_state.bot_active:
-#        stop_hft_bot()
-#        st.sidebar.info("Bot has been stopped.")
-######
+
 
 #if st.session_state.bot_active:
 #    st.success("The bot is currently running.")
@@ -555,19 +526,25 @@ def start_bot():
         
         bot_process.start()
         st.success("Trading bot started successfully.")
+        logging.info("Trading bot process started.")
     else:
         st.warning("Trading bot is already running.")
+        logging.warning("Attempted to start bot, but it is already running.")
 
 # Function to stop the bot
 def stop_bot():
     global bot_process
+    logging.debug(f"stop_bot called. bot_process: {bot_process}")
     if bot_process and bot_process.is_alive():
+        logging.info("Terminating bot process...")
         bot_process.terminate()
         bot_process.join()
         bot_process = None
         st.success("Trading bot stopped successfully.")
+        logging.info("Trading bot process stopped.")
     else:
         st.warning("No trading bot is currently running.")
+        logging.warning("Attempted to stop bot, but no bot is running.")
 
 # Function to run the bot
 def run_bot():
