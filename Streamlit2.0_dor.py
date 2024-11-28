@@ -13,6 +13,10 @@ import time
 from TradeBot import bot_class as tb
 import logging
 
+######################################## STATE MANAGEMENT ########################################
+if 'BL' not in st.session_state:
+    st.session_state.BL = None
+
 
 # Set page configuration
 st.set_page_config(layout="wide", page_title="Portfolio Dashboard")
@@ -378,6 +382,91 @@ def MDP(markets, sectors):
 
     return weights_mdp, prtfl_return, prtfl_vol, sharpe_ratio
 
+def BL(markets,sectors,risk_free_rate=None):
+    prices, sectors_data = load_data(markets, sectors)
+    if st.session_state.BL is None:
+        st.write('No views added, if you want to see a normal mean variance portfolio go to the mean variance portfolio page')
+       
+    else:
+        black_litterman = pc.BlackLitterman(prices,risk_free_rate=risk_free_rate)
+        P = np.zeros((len(st.session_state.BL),len(prices.columns)+1))#+1 for the risk free asset
+        Q = np.zeros(len(st.session_state.BL))
+        omega = np.zeros((len(st.session_state.BL),len(st.session_state.BL)))
+        for i in range(len(st.session_state.BL)):
+            P[i,prices.columns.get_loc(st.session_state.BL['Asset'].iloc[i])] = 1
+            Q[i] = 0.1 if st.session_state.BL['View'].iloc[i] == 'Bullish' else -0.1
+            omega[i, i] = 0.01 if st.session_state.BL['Confidence level'].iloc[i] == 'Certain' else 0.05 if st.session_state.BL['Confidence level'].iloc[i] == 'Moderate' else 0.1
+        black_litterman.add_views(P, Q, omega)
+        opt_tau = black_litterman.optimal_tau()
+        weights_bl = black_litterman.BL(tau=opt_tau)
+        #add the risk free asset to the prices
+    prices['Risk Free Asset'] = risk_free_rate
+
+
+    perf = pc.get_performance(prices,weights_bl)
+    perf.index = pd.to_datetime(perf.index)
+
+    # Create and format the plotly plot
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=perf.index,
+        y=perf.values,
+        mode='lines',
+        name='Portfolio Performance',
+        line=dict(color='royalblue', width=2)
+    ))
+
+    fig.update_layout(
+        title="Portfolio Performance (Equal Weighting)",
+        xaxis_title="Date",
+        yaxis_title="Performance",
+        paper_bgcolor="#262730",
+        plot_bgcolor="#262730",
+        font=dict(color="white"),
+        xaxis=dict(
+            showgrid=False,
+            showline=True,
+            linecolor='white',
+            ticks='outside',
+            tickformat="%b %Y"
+        ),
+        yaxis=dict(
+            showgrid=False,
+            showline=True,
+            linecolor='white',
+            ticks='outside'
+        ),
+        margin=dict(l=60, r=40, t=60, b=40),
+        legend=dict(x=0.5, y=-0.2, xanchor="center", orientation="h")  # Legend at bottom
+    )
+
+    st.session_state.bl_plot = fig  # Save the plot to session state
+
+
+    #Metrics
+    if risk_free_rate is not None:
+        prtfl_return = np.dot(black_litterman.mu_mod, weights_bl)
+        prtfl_vol = np.sqrt(weights_bl @ black_litterman.covmat_mod @ weights_bl)
+        risk_free_rate = black_litterman.risk_free_rate if black_litterman.risk_free_rate is not None else 0
+        sharpe_ratio = (prtfl_return - risk_free_rate) / prtfl_vol
+    else:
+        prtfl_return = np.dot(black_litterman.mu, weights_bl)
+        prtfl_vol = np.sqrt(weights_bl @ black_litterman.covmat @ weights_bl)
+        risk_free_rate = black_litterman.risk_free_rate if black_litterman.risk_free_rate is not None else 0
+        sharpe_ratio = (prtfl_return - risk_free_rate) / prtfl_vol
+
+    weights_bl = pd.DataFrame(weights_bl, index=prices.columns, columns=["Holding (%)"])
+    # Store results in session_state for reuse
+    st.session_state.bl_results = {
+        'weights_bl': weights_bl,
+        'return_bl': prtfl_return,
+        'vol_bl': prtfl_vol,
+        'sharpe_bl': sharpe_ratio,
+        'perf': perf
+    }
+
+    return weights_bl, prtfl_return, prtfl_vol, sharpe_ratio
+
 def EW(markets, sectors):
     prices, sectors_data = load_data(markets, sectors)
     portfolio = pc.Portfolio(prices)
@@ -485,7 +574,7 @@ with st.sidebar:
     ['Select an option', 'Mean variance', 'Equal Risk Contribution', 'Most Diversified', 'Black Litterman', 'Equally weighted']
 )
 
-    if (optimization_method != 'Black Litterman') & (optimization_method != 'Select an option'):
+    if (optimization_method != 'Select an option'):
         markets = st.multiselect('Select markets', ['US', 'EU', 'EM'])
         sectors = st.multiselect('Select sectors', ['Holding Companies', 'Utilities', 'Industrial & Commercial Services', 'Banking & Investment Services', 'Healthcare Services & Equipment',
                                                     'Chemicals', 'Consumer Goods Conglomerates', 'Technology Equipment', 'Software & IT Services', 'Real Estate','Energy - Fossil Fuels',
@@ -552,6 +641,55 @@ with st.sidebar:
             st.session_state["vol_stat"] = f'{np.round(vol_stat * 100, 2)}%'
             st.session_state["sharpe_stat"] = f'{np.round(sharpe_stat, 2)}'
                 
+    elif optimization_method == 'Black Litterman':
+        #need to load the assets to be able to select them
+        if (markets == []) or (sectors == []):
+            price, sectors = load_data(['US', 'EU', 'EM'], ['Holding Companies', 'Utilities', 'Industrial & Commercial Services', 'Banking & Investment Services', 'Healthcare Services & Equipment',
+                                                'Chemicals', 'Consumer Goods Conglomerates', 'Technology Equipment', 'Software & IT Services', 'Real Estate','Energy - Fossil Fuels',
+                                                'Industrial Goods', 'Applied Resources', 'Mineral Resources', 'Cyclical Consumer Products', 'Transportation', 'Retailers'])
+            name_assets = price.columns
+        else:
+            price, sectors_data = load_data(markets, sectors)
+            name_assets = price.columns
+        select_asset = st.selectbox('Select option', (name_assets))
+        views = st.selectbox('Views', ['Bullish', 'Bearish'])
+        uncertainty = st.selectbox('How confident are you of your view?', ['Certain', 'Moderate', 'Uncertain'])
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            if st.button('Add view'):
+                if st.session_state.BL is None:
+                    st.session_state.BL = pd.DataFrame(columns=['Asset', 'View'])
+                    st.session_state.BL = pd.DataFrame({'Asset': [select_asset], 'View': [views], 'Confidence level': [uncertainty]})
+                else:
+                    st.session_state.BL = pd.concat([st.session_state.BL, pd.DataFrame({'Asset': [select_asset], 'View': [views], 'Confidence level': [uncertainty]})])
+                st.write('View added')
+        with col2:
+            if st.button('Delete view'):
+                st.session_state.BL = st.session_state.BL[st.session_state.BL['Asset'] != select_asset]
+                st.write('View deleted')
+        with col3:
+            if st.button('Delete all views'):
+                st.session_state.BL = None
+                st.write('Views deleted')
+        st.write(st.session_state.BL)
+        if st.button("Generate"):
+            if st.session_state.BL is None:
+                st.warning('No views added, if you want to see a normal mean variance portfolio go to the mean variance portfolio page')
+            
+            else:
+                if not all(st.session_state.BL['Asset'].isin(price.columns)):
+                    st.warning('Some assets in the views are not in the selected markets and sectors.')
+                else:
+                    weights_bl, mu_stat, vol_stat, sharpe_stat = BL(markets, sectors, risk_free_rate=0.03)
+                    fig1 = st.session_state.bl_plot
+                    fig2 = create_pie_chart(weights_bl, title="Portfolio Holdings Distribution")
+                    
+                    # Save results to session state
+                    st.session_state["fig1"] = fig1
+                    st.session_state["fig2"] = fig2
+                    st.session_state["mu_stat"] = f'{np.round(mu_stat * 100, 2)}%'
+                    st.session_state["vol_stat"] = f'{np.round(vol_stat * 100, 2)}%'
+                    st.session_state["sharpe_stat"] = f'{np.round(sharpe_stat, 2)}'
 
 ####################################### MAIN #######################################
 st.title("Portfolio Summary")
