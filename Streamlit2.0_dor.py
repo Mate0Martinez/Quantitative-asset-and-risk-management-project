@@ -417,7 +417,7 @@ def BL(markets,sectors,risk_free_rate=None):
     ))
 
     fig.update_layout(
-        title="Portfolio Performance (Equal Weighting)",
+        title="Portfolio Performance (Black Litterman)",
         xaxis_title="Date",
         yaxis_title="Performance",
         paper_bgcolor="#262730",
