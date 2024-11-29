@@ -6,17 +6,20 @@ import matplotlib.dates as mdates
 import plotly.graph_objects as go
 import plotly.express as px
 import Portfolio_classes as pc
-import threading
 from apscheduler.schedulers.background import BackgroundScheduler
 import multiprocessing
 import time
 from TradeBot import bot_class as tb
-import logging
 
 ######################################## STATE MANAGEMENT ########################################
 if 'BL' not in st.session_state:
     st.session_state.BL = None
-
+bot_process = None
+if 'bot_active' not in st.session_state or 'bot_active' == None:
+    bot_process = None
+    st.session_state.bot_active = None
+else:
+    bot_process = st.session_state.bot_active
 
 # Set page configuration
 st.set_page_config(layout="wide", page_title="Portfolio Dashboard")
@@ -805,6 +808,86 @@ if "fig1" in st.session_state and "fig2" in st.session_state and "fig3" in st.se
     st.plotly_chart(st.session_state["fig3"], use_container_width=True)
 else:
     st.info("Press 'Generate' to display the portfolio summary and plots.")
+
+
+
+################################# BOT #################################
+
+# Function to start the bot
+def start_bot():
+    bot_process = st.session_state.bot_active
+    if bot_process is None or not bot_process.is_alive():
+        bot_process = multiprocessing.Process(target=run_bot)
+        
+        bot_process.start()
+        st.success("Trading bot started successfully.")
+        st.session_state.bot_active = bot_process
+    else:
+        st.warning("Trading bot is already running.")
+       
+# Function to stop the bot
+def stop_bot():
+    bot_process = st.session_state.bot_active
+    if bot_process and bot_process.is_alive():
+        bot_process.terminate()
+        bot_process.join()
+        bot_process = None
+        st.success("Trading bot stopped successfully.")
+        st.session_state.bot_active = None
+       
+    else:
+        st.warning("No trading bot is currently running.")
+     
+
+# Function to run the bot
+def run_bot():
+    scheduler = BackgroundScheduler()
+    bot = tb.TradingBot()  # Initialize the bot
+    scheduler.add_job(
+    bot.trading_MAV,
+    'cron',
+    day_of_week='mon-fri',
+    hour='0-23',
+    minute='*', # * is every minute, can change it easily to 15 for example 1,16,31,46
+    #start_date='2024-01-12 12:00:00',
+    #europe paris timezone
+    timezone='Europe/Paris'
+    )
+    scheduler.start()  # Start the scheduler
+
+    scheduler.print_jobs()
+
+    # Keep the scheduler running
+    try:
+        while True:
+            time.sleep(1)
+    except (KeyboardInterrupt, SystemExit):
+        scheduler.shutdown()
+
+st.title("Trading Bot Control Panel")
+
+# Start button
+if st.button("Start Trading Bot"):
+    start_bot()
+
+# Stop button
+if st.button("Stop Trading Bot"):
+    stop_bot()
+
+# Bot status
+
+if bot_process and bot_process.is_alive():
+    st.info("Trading bot is currently running.")
+else:
+    st.info("Trading bot is not running.")
+
+
+
+
+
+
+
+########################################################################
 
 st.markdown(
     """
