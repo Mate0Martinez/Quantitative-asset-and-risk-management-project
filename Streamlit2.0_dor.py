@@ -20,7 +20,7 @@ if 'BL' not in st.session_state:
 
 # Set page configuration
 st.set_page_config(layout="wide", page_title="Portfolio Dashboard")
-
+st.logo("Data/logo.png")
 ####################################### CUSTOM CSS #######################################
 st.markdown(
     """
@@ -553,7 +553,7 @@ def create_bar_chart(df, title="Portfolio Holdings Distribution"):
  
     # Use the DataFrame's index as labels if there is no "Company" column
     labels = df.index if "Company" not in df.columns else df["Company"]
-    colors = ['green' if percent > 0 else 'red' for percent in df["Holding (%)"]]
+    colors = ['forestgreen' if percent > 0 else 'firebrick' for percent in df["Holding (%)"]]
 
     # Create a pie chart
     fig = go.Figure(
@@ -805,3 +805,21 @@ if "fig1" in st.session_state and "fig2" in st.session_state and "fig3" in st.se
     st.plotly_chart(st.session_state["fig3"], use_container_width=True)
 else:
     st.info("Press 'Generate' to display the portfolio summary and plots.")
+
+st.markdown(
+    """
+    <style>
+    /* Add some space between the plots and the footer */
+    .footer {
+        margin-top: 20px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+st.markdown(
+    """
+    <div class="footer">The information provided by our website is for educational purpose only and does not constitute financial advice</div>
+    """,
+    unsafe_allow_html=True,
+)
