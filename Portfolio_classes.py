@@ -90,9 +90,12 @@ class EfficientFrontier:
             it = 100
             gammas2 = np.linspace(0, maxvalue, it)
             frontier2 = [self.efficient_frontier(self.n + 1, self.x0_mod, self.covmat_mod, self.mu_mod, g) for g in gammas2]
+            #get the max sharpe ratio of frontier1
+            sharpe_ratios = [mu / vol for mu, vol, _ in frontier1]  # Calculate Sharpe ratios (mu/vol)
+            max_sharpe_idx = np.argmax(sharpe_ratios)
+            
             # Compute the tangency portfolio
-            tangency_pf  =( np.linalg.inv(self.covmat) @ (self.mu - self.risk_free_rate) ) / (np.ones(self.covmat.shape[0]) @ np.linalg.inv(self.covmat) @ (self.mu - self.risk_free_rate))
-
+            tangency_pf  = frontier1[max_sharpe_idx][2]
             tangency_mu = tangency_pf @ self.mu
             tangency_vol = np.sqrt(tangency_pf @ self.covmat @ tangency_pf)
 

@@ -226,6 +226,8 @@ def plot_efficient_frontier_with_risky(risk_free_rate, shortyes, risk_aversion):
         yaxis_title="Return",
         xaxis_tickformat=".2%",
         yaxis_tickformat=".2%",
+        xaxis_range=[-0.01, frontier[4]+0.1],
+        yaxis_range=[-0.1, frontier[3]+0.1],
         paper_bgcolor="#262730",
         plot_bgcolor="#262730",
         font=dict(color="white"),
@@ -616,6 +618,7 @@ with st.sidebar:
         if riskyes:
             risk_free_rate = st.number_input('Risk-free rate (in %)', value=1.00, step=0.01)
             risk_free_rate = risk_free_rate / 100
+            st.write("You can use for example the [10 year US Treasury rate](https://www.cnbc.com/quotes/US10Y) as a risk-free rate.")
         risk_aversion = st.select_slider('How much risk you want to take?', options=["Minimum Risk", "Conservative", "Balanced", "Aggressive"])
         risk_aversion = 0 if risk_aversion == "Minimum Risk" else 0.1 if risk_aversion == "Conservative" else 0.2 if risk_aversion == "Balanced" else 0.4
         if st.button("Generate"):
@@ -768,18 +771,8 @@ if "fig1" in st.session_state and "fig2" in st.session_state and "fig3" in st.se
             unsafe_allow_html=True,
         )
     with col4:
-        if optimization_method == "mean variance":
+        if optimization_method == "Mean variance":
 
-            st.markdown(
-                f"""
-                <div class="container statistic-container">
-                    <div class="stat-title">Max Drawdown</div>
-                    <div class="stat-value">{st.session_state.get("max_drawdown", "0.00%")}</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-        else:
             st.markdown(
                 f"""
                 <div class="container statistic-container">
@@ -787,6 +780,17 @@ if "fig1" in st.session_state and "fig2" in st.session_state and "fig3" in st.se
                     <div class="stat-value">Mean variance</div>
                 </div>
                 """,   
+                unsafe_allow_html=True,
+            )
+        else:
+            
+            st.markdown(
+                f"""
+                <div class="container statistic-container">
+                    <div class="stat-title">Max Drawdown</div>
+                    <div class="stat-value">{st.session_state.get("max_drawdown", "0.00%")}</div>
+                </div>
+                """,
                 unsafe_allow_html=True,
             )
 
