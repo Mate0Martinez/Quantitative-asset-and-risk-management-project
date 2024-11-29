@@ -117,21 +117,10 @@ def plot_efficient_frontier_without_risky(shortyes, risk_aversion):
     frontier = efficient_frontier.get_efficient_frontier()
     gammas = np.linspace(-5, 5, 500)
     gamma_zero_index = np.argmin(np.abs(gammas))
-    gamma_index = np.argmin(np.abs(gammas - risk_aversion))  # Closest gamma to risk_aversion
-    sharpe_MV, mu_MV, vol_MV = efficient_frontier.metrics_MV(gamma=risk_aversion)
+    sharpe_MV, mu_MV, vol_MV, weights_mv = efficient_frontier.metrics_pf(gamma=risk_aversion)
 
-    #### to find the optimal weights according to our data
-    returns = prices.pct_change().dropna()
-    mu = returns.mean().values * 252  # Annualized expected returns
-    vol = returns.std().values * np.sqrt(252)  # Annualized volatilities
-    correl_matrix = returns.corr().values  # Correlation matrix
-    covmat = vol.reshape(1, -1) * correl_matrix * vol.reshape(-1, 1)  # Covariance matrix
-    n = mu.shape[0]
-    x0 = np.ones(n) / n
-
-    weights_mv = pd.DataFrame(np.round(efficient_frontier.efficient_frontier(n, x0, covmat, mu, risk_aversion)[2]*100,2), index=prices.columns, columns=['Holding (%)'])
-    weights_mv = weights_mv.merge(sectors_data, left_index=True, right_index=True)[['TRBC BUSI SEC NAME', 'Holding (%)']].rename(columns={'TRBC BUSI SEC NAME': 'Sector'})
-
+    weights_mv = pd.DataFrame(weights_mv, index=prices.columns, columns=['Holding (%)'])
+   
     # Prepare data for plotly
     x = [f[1] for f in frontier]  # Volatility
     y = [f[0] for f in frontier]  # Return
@@ -153,8 +142,8 @@ def plot_efficient_frontier_without_risky(shortyes, risk_aversion):
 
     # Add User Portfolio
     fig.add_trace(go.Scatter(
-        x=[frontier[gamma_index][1]],
-        y=[frontier[gamma_index][0]],
+        x=[vol_MV],
+        y=[mu_MV],
         mode='markers',
         marker=dict(color='green', size=10, symbol='star'),
         name='Your Portfolio'
@@ -180,8 +169,7 @@ def plot_efficient_frontier_with_risky(risk_free_rate, shortyes, risk_aversion):
     frontier = efficient_frontier.get_efficient_frontier()
     gammas = np.linspace(-5, 5, 500)
     gamma_zero_index = np.argmin(np.abs(gammas))
-    gamma_index = np.argmin(np.abs(gammas - risk_aversion))
-    sharpe_MV, mu_MV, vol_MV = efficient_frontier.metrics_MV(gamma=risk_aversion)
+    sharpe_pf, mu_pf, vol_pf, weights_pf = efficient_frontier.metrics_pf(gamma=risk_aversion)
 
     # Prepare data for plotly
     x_frontier = [f[1] for f in frontier[0]]  # Volatility of Efficient Frontier
@@ -190,17 +178,9 @@ def plot_efficient_frontier_with_risky(risk_free_rate, shortyes, risk_aversion):
     x_cml = [f[1] for f in frontier[1]]  # Volatility of Capital Market Line
     y_cml = [f[0] for f in frontier[1]]  # Return of Capital Market Line
 
-    #### to find the optimal weights according to our data
-    returns = prices.pct_change().dropna()
-    mu = returns.mean().values * 252  # Annualized expected returns
-    vol = returns.std().values * np.sqrt(252)  # Annualized volatilities
-    correl_matrix = returns.corr().values  # Correlation matrix
-    covmat = vol.reshape(1, -1) * correl_matrix * vol.reshape(-1, 1)  # Covariance matrix
-    n = mu.shape[0]
-    x0 = np.ones(n) / n
 
-    weights_mv = pd.DataFrame(np.round(efficient_frontier.efficient_frontier(n, x0, covmat, mu, risk_aversion)[2]*100,2), index=prices.columns, columns=['Holding (%)'])
-    weights_mv = weights_mv.merge(sectors_data, left_index=True, right_index=True)[['TRBC BUSI SEC NAME', 'Holding (%)']].rename(columns={'TRBC BUSI SEC NAME': 'Sector'})
+    weights_pf = pd.DataFrame(weights_pf, index=np.append(prices.columns.values, 'Risk Free Rate'), columns=['Holding (%)'])
+    #weights_pf = weights_pf.merge(sectors_data, left_index=True, right_index=True)[['TRBC BUSI SEC NAME', 'Holding (%)']].rename(columns={'TRBC BUSI SEC NAME': 'Sector'})
 
     # Create Plotly figure
     fig = go.Figure()
@@ -231,8 +211,8 @@ def plot_efficient_frontier_with_risky(risk_free_rate, shortyes, risk_aversion):
 
     # Add User Portfolio
     fig.add_trace(go.Scatter(
-        x=[frontier[0][gamma_index][1]],
-        y=[frontier[0][gamma_index][0]],
+        x=[vol_pf],
+        y=[mu_pf],
         mode='markers',
         marker=dict(color='green', size=10, symbol='star'),
         name='Your Portfolio'
@@ -249,7 +229,7 @@ def plot_efficient_frontier_with_risky(risk_free_rate, shortyes, risk_aversion):
         legend=dict(x=0.5, y=-0.2, xanchor="center", orientation="h")  # Legend at bottom
     )
 
-    return fig, sharpe_MV, mu_MV, vol_MV, weights_mv
+    return fig, sharpe_pf, mu_pf, vol_pf, weights_pf
 
 def ERC(markets, sectors):
     # Unpack the tuple returned by load_data
@@ -397,8 +377,8 @@ def BL(markets,sectors,risk_free_rate=None):
             Q[i] = 0.1 if st.session_state.BL['View'].iloc[i] == 'Bullish' else -0.1
             omega[i, i] = 0.01 if st.session_state.BL['Confidence level'].iloc[i] == 'Certain' else 0.05 if st.session_state.BL['Confidence level'].iloc[i] == 'Moderate' else 0.1
         black_litterman.add_views(P, Q, omega)
-        opt_tau = black_litterman.optimal_tau()
-        weights_bl = black_litterman.BL(tau=opt_tau)
+        opt_tau = black_litterman.optimal_tau()[0]
+        weights_bl = black_litterman.BL(tau=0.1)
         #add the risk free asset to the prices
     prices['Risk Free Asset'] = risk_free_rate
 
@@ -534,7 +514,7 @@ def EW(markets, sectors):
 
 def create_pie_chart(df, title="Portfolio Holdings Distribution"):
     # Filter out rows with zero holdings
-    df_filtered = df[df["Holding (%)"] > 0]
+    df_filtered = df[df["Holding (%)"] > 0.00001]
 
     # Use the DataFrame's index as labels if there is no "Company" column
     labels = df_filtered.index if "Company" not in df_filtered.columns else df_filtered["Company"]
@@ -566,7 +546,41 @@ def create_pie_chart(df, title="Portfolio Holdings Distribution"):
 
     return fig
 
+def create_bar_chart(df, title="Portfolio Holdings Distribution"):
+ 
+    # Use the DataFrame's index as labels if there is no "Company" column
+    labels = df.index if "Company" not in df.columns else df["Company"]
+    colors = ['green' if percent > 0 else 'red' for percent in df["Holding (%)"]]
 
+    # Create a pie chart
+    fig = go.Figure(
+        data=[
+            go.Bar(
+                x=labels,
+                y=df["Holding (%)"],
+                hoverinfo="text",
+                marker=dict(color=colors)
+            )
+        ]
+    )
+
+    # Update layout for styling
+    fig.update_layout(
+        title_text=title,
+        paper_bgcolor="#262730",
+        font=dict(color="white"),
+        margin=dict(l=60, r=40, t=60, b=60),
+        legend=dict(
+            orientation="v",  # Horizontal legend
+        ),
+        xaxis=dict(
+            tickvals=labels,
+            ticktext=[f"{label}: {percent*100:.2f}%" for label, percent in zip(labels, df["Holding (%)"])]
+        ),
+
+    )
+
+    return fig
 ####################################### SIDEBAR #######################################
 with st.sidebar:
     optimization_method = st.selectbox(
@@ -575,18 +589,33 @@ with st.sidebar:
 )
 
     if (optimization_method != 'Select an option'):
-        markets = st.multiselect('Select markets', ['US', 'EU', 'EM'])
-        sectors = st.multiselect('Select sectors', ['Holding Companies', 'Utilities', 'Industrial & Commercial Services', 'Banking & Investment Services', 'Healthcare Services & Equipment',
+        container = st.container()
+        all_checked = st.checkbox("Select all")
+ 
+        if all_checked:
+            markets = st.multiselect('Select markets', ['US', 'EU', 'EM'], ['US', 'EU', 'EM'])
+            sectors = st.multiselect('Select sectors', ['Holding Companies', 'Utilities', 'Industrial & Commercial Services', 'Banking & Investment Services', 'Healthcare Services & Equipment',
+                                                    'Chemicals', 'Consumer Goods Conglomerates', 'Technology Equipment', 'Software & IT Services', 'Real Estate','Energy - Fossil Fuels',
+                                                    'Industrial Goods', 'Applied Resources', 'Mineral Resources', 'Cyclical Consumer Products', 'Transportation', 'Retailers'], ['Holding Companies', 'Utilities', 'Industrial & Commercial Services', 'Banking & Investment Services', 'Healthcare Services & Equipment',
                                                     'Chemicals', 'Consumer Goods Conglomerates', 'Technology Equipment', 'Software & IT Services', 'Real Estate','Energy - Fossil Fuels',
                                                     'Industrial Goods', 'Applied Resources', 'Mineral Resources', 'Cyclical Consumer Products', 'Transportation', 'Retailers'])
     
+        else:
+            markets = st.multiselect('Select markets', ['US', 'EU', 'EM'])
+            sectors = st.multiselect('Select sectors', ['Holding Companies', 'Utilities', 'Industrial & Commercial Services', 'Banking & Investment Services', 'Healthcare Services & Equipment',
+                                                    'Chemicals', 'Consumer Goods Conglomerates', 'Technology Equipment', 'Software & IT Services', 'Real Estate','Energy - Fossil Fuels',
+                                                    'Industrial Goods', 'Applied Resources', 'Mineral Resources', 'Cyclical Consumer Products', 'Transportation', 'Retailers'])
+    
+       
+        
+
     if optimization_method == 'Mean variance':
         shortyes = st.checkbox('Short-selling?', value=False)
         riskyes = st.checkbox('Risk-free rate?', value=False)
         if riskyes:
             risk_free_rate = st.number_input('Risk-free rate', value=0.01, step=0.01)
-        risk_aversion = float(st.select_slider('How much risk you want to take?', options=[f"{i:.2f}" for i in np.linspace(0, 1, 10+1)]))
-        
+        risk_aversion = st.select_slider('How much risk you want to take?', options=["Minimum Risk", "Conservative", "Balanced", "Aggressive"])
+        risk_aversion = 0 if risk_aversion == "Minimum Risk" else 0.1 if risk_aversion == "Conservative" else 0.2 if risk_aversion == "Balanced" else 0.4
         if st.button("Generate"):
             if optimization_method == 'Mean variance':
                 if riskyes:
@@ -595,9 +624,10 @@ with st.sidebar:
                     fig1, sharpe_stat, mu_stat, vol_stat, weights_mv = plot_efficient_frontier_without_risky(shortyes,risk_aversion)
                 
                 fig2 = create_pie_chart(weights_mv, title="Portfolio Holdings Distribution")
-                
+                fig3 = create_bar_chart(weights_mv, title="Portfolio Holdings Distribution")
                 st.session_state["fig1"] = fig1
                 st.session_state["fig2"] = fig2
+                st.session_state["fig3"] = fig3
                 st.session_state["sharpe_stat"] = np.round(sharpe_stat,2)
                 st.session_state["mu_stat"] = f'{np.round(mu_stat * 100,2)}%'
                 st.session_state["vol_stat"] = f'{np.round(vol_stat * 100,2)}%'
@@ -607,10 +637,11 @@ with st.sidebar:
             weights_erc, mu_stat, vol_stat, sharpe_stat = ERC(markets, sectors)
             fig1 = st.session_state.erc_plot
             fig2 = create_pie_chart(weights_erc, title="Portfolio Holdings Distribution")
-            
+            fig3 = create_bar_chart(weights_erc, title="Portfolio Holdings Distribution")
             # Save results to session state
             st.session_state["fig1"] = fig1
             st.session_state["fig2"] = fig2
+            st.session_state["fig3"] = fig3
             st.session_state["mu_stat"] = f'{np.round(mu_stat * 100, 2)}%'
             st.session_state["vol_stat"] = f'{np.round(vol_stat * 100, 2)}%'
             st.session_state["sharpe_stat"] = f'{np.round(sharpe_stat, 2)}'
@@ -620,10 +651,11 @@ with st.sidebar:
             weights_mdp, mu_stat, vol_stat, sharpe_stat = MDP(markets, sectors)
             fig1 = st.session_state.mdp_plot
             fig2 = create_pie_chart(weights_mdp, title="Portfolio Holdings Distribution")
-            
+            fig3 = create_bar_chart(weights_mdp, title="Portfolio Holdings Distribution")
             # Save results to session state
             st.session_state["fig1"] = fig1
             st.session_state["fig2"] = fig2
+            st.session_state["fig3"] = fig3
             st.session_state["mu_stat"] = f'{np.round(mu_stat * 100, 2)}%'
             st.session_state["vol_stat"] = f'{np.round(vol_stat * 100, 2)}%'
             st.session_state["sharpe_stat"] = f'{np.round(sharpe_stat, 2)}'
@@ -633,10 +665,11 @@ with st.sidebar:
             weights_eq, mu_stat, vol_stat, sharpe_stat = EW(markets, sectors)
             fig1 = st.session_state.eq_plot
             fig2 = create_pie_chart(weights_eq, title="Portfolio Holdings Distribution")
-            
+            fig3 = create_bar_chart(weights_eq, title="Portfolio Holdings Distribution")
             # Save results to session state
             st.session_state["fig1"] = fig1
             st.session_state["fig2"] = fig2
+            st.session_state["fig3"] = fig3
             st.session_state["mu_stat"] = f'{np.round(mu_stat * 100, 2)}%'
             st.session_state["vol_stat"] = f'{np.round(vol_stat * 100, 2)}%'
             st.session_state["sharpe_stat"] = f'{np.round(sharpe_stat, 2)}'
@@ -659,9 +692,9 @@ with st.sidebar:
             if st.button('Add view'):
                 if st.session_state.BL is None:
                     st.session_state.BL = pd.DataFrame(columns=['Asset', 'View'])
-                    st.session_state.BL = pd.DataFrame({'Asset': [select_asset], 'View': [views], 'Confidence level': [uncertainty]}).set_index('Asset')
+                    st.session_state.BL = pd.DataFrame({'Asset': [select_asset], 'View': [views], 'Confidence level': [uncertainty]})
                 else:
-                    st.session_state.BL = pd.concat([st.session_state.BL, pd.DataFrame({'Asset': [select_asset], 'View': [views], 'Confidence level': [uncertainty]})]).set_index('Asset')
+                    st.session_state.BL = pd.concat([st.session_state.BL, pd.DataFrame({'Asset': [select_asset], 'View': [views], 'Confidence level': [uncertainty]})])
                 st.write('View added')
         with col2:
             if st.button('Delete view'):
@@ -683,10 +716,11 @@ with st.sidebar:
                     weights_bl, mu_stat, vol_stat, sharpe_stat = BL(markets, sectors, risk_free_rate=0.03)
                     fig1 = st.session_state.bl_plot
                     fig2 = create_pie_chart(weights_bl, title="Portfolio Holdings Distribution")
-                    
+                    fig3 = create_bar_chart(weights_bl, title="Portfolio Holdings Distribution")
                     # Save results to session state
                     st.session_state["fig1"] = fig1
                     st.session_state["fig2"] = fig2
+                    st.session_state["fig3"] = fig3
                     st.session_state["mu_stat"] = f'{np.round(mu_stat * 100, 2)}%'
                     st.session_state["vol_stat"] = f'{np.round(vol_stat * 100, 2)}%'
                     st.session_state["sharpe_stat"] = f'{np.round(sharpe_stat, 2)}'
@@ -694,7 +728,7 @@ with st.sidebar:
 ####################################### MAIN #######################################
 st.title("Portfolio Summary")
 
-if "fig1" in st.session_state and "fig2" in st.session_state:
+if "fig1" in st.session_state and "fig2" in st.session_state and "fig3" in st.session_state:
     # Top Statistics with Restored Backgrounds and Spacing
     col1, col2, col3, col4 = st.columns(4)
     with col1:
@@ -745,5 +779,7 @@ if "fig1" in st.session_state and "fig2" in st.session_state:
 
     with col6:  # Portfolio Holdings Distribution
         st.plotly_chart(st.session_state["fig2"], use_container_width=True)
+    
+    st.plotly_chart(st.session_state["fig3"], use_container_width=True)
 else:
     st.info("Press 'Generate' to display the portfolio summary and plots.")

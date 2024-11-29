@@ -68,7 +68,7 @@ class EfficientFrontier:
         else:
             bounds = [(0, 1) for _ in range(n)]  # No short-selling allowed
 
-        res = minimize(self.QP, x0, args=(covmat, mu, gam),
+        res = minimize(self.QP, x0, args=(covmat, mu, gam), options={'disp': False},
                     bounds=bounds, constraints=constraints)
 
         optimized_weights = res.x
@@ -90,18 +90,11 @@ class EfficientFrontier:
             it = 100
             gammas2 = np.linspace(0, maxvalue, it)
             frontier2 = [self.efficient_frontier(self.n + 1, self.x0_mod, self.covmat_mod, self.mu_mod, g) for g in gammas2]
+            # Compute the tangency portfolio
+            tangency_pf  =( np.linalg.inv(self.covmat) @ (self.mu - self.risk_free_rate) ) / (np.ones(self.covmat.shape[0]) @ np.linalg.inv(self.covmat) @ (self.mu - self.risk_free_rate))
 
-            # Compute the tangency portfolio by combining two arbitrary portfolios
-            x1_pos = round(0.25/maxvalue * (it-1), 0) # Position of the portfolio with gamma = 0.25
-            x2_pos = round(0.5/maxvalue * (it-1), 0) # Position of the portfolio with gamma = 0.5
-            x1 = frontier2[int(x1_pos)][2] # Weights of the portfolio with gamma = 0.25
-            x2 = frontier2[int(x2_pos)][2] # Weights of the portfolio with gamma = 0.5
-
-            alpha_star = x1[-1] / (x1[-1] - x2[-1])
-            tangency_pf = (1-alpha_star) * x1 + alpha_star * x2
-
-            tangency_mu = tangency_pf @ self.mu_mod
-            tangency_vol = np.sqrt(tangency_pf @ self.covmat_mod @ tangency_pf)
+            tangency_mu = tangency_pf @ self.mu
+            tangency_vol = np.sqrt(tangency_pf @ self.covmat @ tangency_pf)
 
         if self.risk_free_rate is not None:
             return frontier1, frontier2, tangency_pf, tangency_mu, tangency_vol
@@ -117,20 +110,24 @@ class EfficientFrontier:
         return port
     
     # metrics for the optimized portfolio
-    def metrics_MV(self, gamma):
+    def metrics_pf(self, gamma):
         '''
         Calculate the Sharpe Ratio and other metrics for a specific gamma.
         '''
         # Obtenez les résultats optimaux pour le gamma donné
-        mu_optimized, vol_optimized, optimized_weights = self.efficient_frontier(
-            self.n, self.x0, self.covmat, self.mu, gamma)
+        if self.risk_free_rate is not None:
+            mu_optimized, vol_optimized, optimized_weights = self.efficient_frontier(
+                self.n+1, self.x0_mod, self.covmat_mod, self.mu_mod, gamma)
+        else:    
+            mu_optimized, vol_optimized, optimized_weights = self.efficient_frontier(
+                self.n, self.x0, self.covmat, self.mu, gamma)
 
         # Si le taux sans risque est fourni, utilisez-le, sinon 0
         rf = self.risk_free_rate if self.risk_free_rate is not None else 0
 
         # Calculez le Sharpe Ratio
         sharpe_ratio = (mu_optimized - rf) / vol_optimized
-        return sharpe_ratio, mu_optimized, vol_optimized
+        return sharpe_ratio, mu_optimized, vol_optimized, optimized_weights
 
 class Portfolio: 
     # Equal Risk Contribution Portfolio maybe use only one class and change the name to portfolio 
@@ -282,29 +279,29 @@ class BlackLitterman:
 
     def target_TE(self, x, target):
         '''Compute the optimal tau for a given target volatility.'''
-        constraints = LinearConstraint(np.ones(self.n), lb=1, ub=1)  # Adjust constraint
-        bounds = [(None, None) for _ in range(self.n)]  # Short-selling allowed
+        constraints = [LinearConstraint(np.ones(self.x0_mod.shape[0]), 1, 1), LinearConstraint(np.eye(self.x0_mod.shape[0]), 0)]  # Adjust constraint
+        #bounds = [(None, None) for _ in range(self.n)]  # Short-selling allowed
         gam = 1/self.implied_phi
         mu_bar = self.implied_mu + (self.gamma_matrix(x) @ self.P.T) @ np.linalg.inv(self.P @ self.gamma_matrix(x) @ self.P.T + self.Omega) @ (self.Q - self.P @ self.implied_mu)
-        res = minimize(self.QP, self.x0_mod, args = (self.covmat_mod, mu_bar, gam) , options={'disp': False}, constraints = constraints, bounds=bounds)
+        res = minimize(self.QP, self.x0_mod, args = (self.covmat_mod, mu_bar, gam) , options={'disp': False}, constraints = constraints)
         optimized_weights = res.x
         return np.sqrt((optimized_weights-self.x0_mod) @ self.covmat_mod @ (optimized_weights-self.x0_mod)) - target
 
     def optimal_tau(self):
-        opti_tau = fsolve(self.target_TE, x0 = 0.05, args = 0.02)[0]
+        opti_tau = fsolve(self.target_TE, x0 = 0.02, args = 0.05)
         return opti_tau
 
     def BL(self,tau):
         '''Compute the Black-Litterman portfolio.'''
         if self.P is None:
             raise ValueError('No views added to the model.')
-        constraints = LinearConstraint(np.ones(self.n), lb=1, ub=1)  # Adjust constraint
-        bounds = [(None, None) for _ in range(self.n)]  # Short-selling allowed
+        
+        constraints = [LinearConstraint(np.ones(self.x0_mod.shape[0]), 1, 1), LinearConstraint(np.eye(self.x0_mod.shape[0]), 0)]
 
 
         mu_bar = self.implied_mu + (self.gamma_matrix(tau) @ self.P.T) @ np.linalg.inv(self.P @ self.gamma_matrix(tau) @ self.P.T + self.Omega) @ (self.Q - self.P @ self.implied_mu)
         gam = 1/self.implied_phi
-        res = minimize(self.QP, self.x0_mod, args = (self.covmat_mod, mu_bar, gam) , options={'disp': False}, constraints = constraints,bounds=bounds)
+        res = minimize(self.QP, self.x0_mod, args = (self.covmat_mod, mu_bar, gam) , options={'disp': False}, constraints = constraints)
         optimized_weights_bl = res.x
     
         return optimized_weights_bl
