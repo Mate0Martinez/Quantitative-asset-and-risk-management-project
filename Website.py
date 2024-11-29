@@ -21,10 +21,18 @@ if 'bot_active' not in st.session_state or 'bot_active' == None:
 else:
     bot_process = st.session_state.bot_active
 
+
+####################################### CUSTOM CSS #######################################
 # Set page configuration
 st.set_page_config(layout="wide", page_title="Portfolio Dashboard")
 st.logo("Data/logo.png")
-####################################### CUSTOM CSS #######################################
+st.html("""
+  <style>
+    [alt=Logo] {
+      height: 9rem;
+    }
+  </style>
+        """)
 st.markdown(
     """
     <style>
@@ -860,7 +868,7 @@ def run_bot():
     # Keep the scheduler running
     try:
         while True:
-            time.sleep(1)
+            time.sleep(1)         
     except (KeyboardInterrupt, SystemExit):
         scheduler.shutdown()
 
@@ -881,8 +889,14 @@ if bot_process and bot_process.is_alive():
 else:
     st.info("Trading bot is not running.")
 
-
-
+with open('trade_log_MAV.csv', 'r') as f:
+            lines = f.readlines()
+            if len(lines) > 0:
+                #put the first and last line in the dataframe
+                df = pd.DataFrame([x.split(',') for x in lines[::len(lines)-1]], columns=lines[0].split(','))
+                #df drop first row
+                df = df.drop(0)
+                st.write(df)
 
 
 

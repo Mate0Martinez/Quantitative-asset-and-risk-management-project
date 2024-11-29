@@ -14,6 +14,7 @@ import os
 from datetime import datetime, timedelta
 
 
+
 #####################################
 ##################################### Oanda API to get the EURUSD spread
 access_token = 'cffbb5e578fd005009b83c22258c47e9-a57b606d23808ba5f31ae338db2d2af4'
@@ -192,7 +193,7 @@ def trading_MAV():
 
     print('####################### MAV #######################')
     print(trade_log_MAV)
-    print('####################### MR #######################')
+    print('####################### MAV #######################')
 
     filename = 'trade_log_MAV.csv'
     if os.path.exists(filename):
