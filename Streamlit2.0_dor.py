@@ -153,6 +153,8 @@ def plot_efficient_frontier_without_risky(shortyes, risk_aversion):
         title_text=f"Efficient Frontier",
         xaxis_title="Volatility",
         yaxis_title="Return",
+        xaxis_tickformat=".2%",
+        yaxis_tickformat=".2%",
         paper_bgcolor="#262730",
         plot_bgcolor="#262730",
         font=dict(color="white"),
@@ -222,6 +224,8 @@ def plot_efficient_frontier_with_risky(risk_free_rate, shortyes, risk_aversion):
         title_text=f"Efficient Frontier",
         xaxis_title="Volatility",
         yaxis_title="Return",
+        xaxis_tickformat=".2%",
+        yaxis_tickformat=".2%",
         paper_bgcolor="#262730",
         plot_bgcolor="#262730",
         font=dict(color="white"),
@@ -284,7 +288,7 @@ def ERC(markets, sectors):
     prtfl_vol = np.sqrt(weights_erc @ portfolio.covmat @ weights_erc)
     risk_free_rate = portfolio.risk_free_rate if portfolio.risk_free_rate is not None else 0
     sharpe_ratio = (prtfl_return - risk_free_rate) / prtfl_vol
-
+    max_drawdown = pc.max_drawdown(perf)
     # Create a DataFrame to display the weights
     weights_erc = pd.DataFrame(weights_erc, index=prices.columns, columns=["Holding (%)"])
     
@@ -295,9 +299,10 @@ def ERC(markets, sectors):
         'vol_erc': prtfl_vol,
         'sharpe_erc': sharpe_ratio,
         'perf': perf,
+        'max_drawdown': max_drawdown
     }
 
-    return weights_erc, prtfl_return, prtfl_vol, sharpe_ratio
+    return weights_erc, prtfl_return, prtfl_vol, sharpe_ratio, max_drawdown
 
 def MDP(markets, sectors):
     prices, sectors_data = load_data(markets, sectors)
@@ -347,7 +352,7 @@ def MDP(markets, sectors):
     prtfl_vol = np.sqrt(weights_mdp @ portfolio.covmat @ weights_mdp)
     risk_free_rate = portfolio.risk_free_rate if portfolio.risk_free_rate is not None else 0
     sharpe_ratio = (prtfl_return - risk_free_rate) / prtfl_vol
-
+    max_drawdown = pc.max_drawdown(perf)
     # Create a DataFrame to display the weights
     weights_mdp = pd.DataFrame(weights_mdp, index=prices.columns, columns=["Holding (%)"])
 
@@ -357,10 +362,11 @@ def MDP(markets, sectors):
         'return_mdp': prtfl_return,
         'vol_mdp': prtfl_vol,
         'sharpe_mdp': sharpe_ratio,
-        'perf': perf
+        'perf': perf,
+        'max_drawdown': max_drawdown
     }
 
-    return weights_mdp, prtfl_return, prtfl_vol, sharpe_ratio
+    return weights_mdp, prtfl_return, prtfl_vol, sharpe_ratio, max_drawdown
 
 def BL(markets,sectors,risk_free_rate=None):
     prices, sectors_data = load_data(markets, sectors)
@@ -369,7 +375,7 @@ def BL(markets,sectors,risk_free_rate=None):
        
     else:
         black_litterman = pc.BlackLitterman(prices,risk_free_rate=risk_free_rate)
-        P = np.zeros((len(st.session_state.BL),len(prices.columns)+1))#+1 for the risk free asset
+        P = np.zeros((len(st.session_state.BL),len(prices.columns)))#+1 for the risk free asset
         Q = np.zeros(len(st.session_state.BL))
         omega = np.zeros((len(st.session_state.BL),len(st.session_state.BL)))
         for i in range(len(st.session_state.BL)):
@@ -377,10 +383,8 @@ def BL(markets,sectors,risk_free_rate=None):
             Q[i] = 0.1 if st.session_state.BL['View'].iloc[i] == 'Bullish' else -0.1
             omega[i, i] = 0.01 if st.session_state.BL['Confidence level'].iloc[i] == 'Certain' else 0.05 if st.session_state.BL['Confidence level'].iloc[i] == 'Moderate' else 0.1
         black_litterman.add_views(P, Q, omega)
-        opt_tau = black_litterman.optimal_tau()[0]
+        opt_tau = black_litterman.optimal_tau()
         weights_bl = black_litterman.BL(tau=0.1)
-        #add the risk free asset to the prices
-    prices['Risk Free Asset'] = risk_free_rate
 
 
     perf = pc.get_performance(prices,weights_bl)
@@ -422,18 +426,13 @@ def BL(markets,sectors,risk_free_rate=None):
 
     st.session_state.bl_plot = fig  # Save the plot to session state
 
-
+    #calculate max drawdown
+    max_drawdown = pc.max_drawdown(perf)
     #Metrics
-    if risk_free_rate is not None:
-        prtfl_return = np.dot(black_litterman.mu_mod, weights_bl)
-        prtfl_vol = np.sqrt(weights_bl @ black_litterman.covmat_mod @ weights_bl)
-        risk_free_rate = black_litterman.risk_free_rate if black_litterman.risk_free_rate is not None else 0
-        sharpe_ratio = (prtfl_return - risk_free_rate) / prtfl_vol
-    else:
-        prtfl_return = np.dot(black_litterman.mu, weights_bl)
-        prtfl_vol = np.sqrt(weights_bl @ black_litterman.covmat @ weights_bl)
-        risk_free_rate = black_litterman.risk_free_rate if black_litterman.risk_free_rate is not None else 0
-        sharpe_ratio = (prtfl_return - risk_free_rate) / prtfl_vol
+    prtfl_return = np.dot(black_litterman.mu, weights_bl)
+    prtfl_vol = np.sqrt(weights_bl @ black_litterman.covmat @ weights_bl)
+    risk_free_rate = black_litterman.risk_free_rate if black_litterman.risk_free_rate is not None else 0
+    sharpe_ratio = (prtfl_return - risk_free_rate) / prtfl_vol
 
     weights_bl = pd.DataFrame(weights_bl, index=prices.columns, columns=["Holding (%)"])
     # Store results in session_state for reuse
@@ -442,10 +441,11 @@ def BL(markets,sectors,risk_free_rate=None):
         'return_bl': prtfl_return,
         'vol_bl': prtfl_vol,
         'sharpe_bl': sharpe_ratio,
-        'perf': perf
+        'perf': perf,
+        'max_drawdown': max_drawdown
     }
 
-    return weights_bl, prtfl_return, prtfl_vol, sharpe_ratio
+    return weights_bl, prtfl_return, prtfl_vol, sharpe_ratio, max_drawdown
 
 def EW(markets, sectors):
     prices, sectors_data = load_data(markets, sectors)
@@ -495,7 +495,7 @@ def EW(markets, sectors):
     prtfl_vol = np.sqrt(weights_eq @ portfolio.covmat @ weights_eq)
     risk_free_rate = portfolio.risk_free_rate if portfolio.risk_free_rate is not None else 0
     sharpe_ratio = (prtfl_return - risk_free_rate) / prtfl_vol
-
+    max_drawdown = pc.max_drawdown(perf)
     # Create a DataFrame to display the weights
     weights_eq = pd.DataFrame(weights_eq, index=prices.columns, columns=["Holding (%)"])
 
@@ -505,10 +505,11 @@ def EW(markets, sectors):
         'return_eq': prtfl_return,
         'vol_eq': prtfl_vol,
         'sharpe_eq': sharpe_ratio,
-        'perf': perf
+        'perf': perf,
+        'max_drawdown': max_drawdown
     }
 
-    return weights_eq, prtfl_return, prtfl_vol, sharpe_ratio
+    return weights_eq, prtfl_return, prtfl_vol, sharpe_ratio, max_drawdown
 
 
 
@@ -613,7 +614,8 @@ with st.sidebar:
         shortyes = st.checkbox('Short-selling?', value=False)
         riskyes = st.checkbox('Risk-free rate?', value=False)
         if riskyes:
-            risk_free_rate = st.number_input('Risk-free rate', value=0.01, step=0.01)
+            risk_free_rate = st.number_input('Risk-free rate (in %)', value=1.00, step=0.01)
+            risk_free_rate = risk_free_rate / 100
         risk_aversion = st.select_slider('How much risk you want to take?', options=["Minimum Risk", "Conservative", "Balanced", "Aggressive"])
         risk_aversion = 0 if risk_aversion == "Minimum Risk" else 0.1 if risk_aversion == "Conservative" else 0.2 if risk_aversion == "Balanced" else 0.4
         if st.button("Generate"):
@@ -634,7 +636,7 @@ with st.sidebar:
 
     elif optimization_method == 'Equal Risk Contribution':
         if st.button("Generate"):
-            weights_erc, mu_stat, vol_stat, sharpe_stat = ERC(markets, sectors)
+            weights_erc, mu_stat, vol_stat, sharpe_stat, max_drawdown = ERC(markets, sectors)
             fig1 = st.session_state.erc_plot
             fig2 = create_pie_chart(weights_erc, title="Portfolio Holdings Distribution")
             fig3 = create_bar_chart(weights_erc, title="Portfolio Holdings Distribution")
@@ -645,10 +647,11 @@ with st.sidebar:
             st.session_state["mu_stat"] = f'{np.round(mu_stat * 100, 2)}%'
             st.session_state["vol_stat"] = f'{np.round(vol_stat * 100, 2)}%'
             st.session_state["sharpe_stat"] = f'{np.round(sharpe_stat, 2)}'
+            st.session_state["max_drawdown"] = f'{np.round(max_drawdown*100, 2)}%'
 
     elif optimization_method == 'Most Diversified':
         if st.button("Generate"):
-            weights_mdp, mu_stat, vol_stat, sharpe_stat = MDP(markets, sectors)
+            weights_mdp, mu_stat, vol_stat, sharpe_stat,max_drawdown = MDP(markets, sectors)
             fig1 = st.session_state.mdp_plot
             fig2 = create_pie_chart(weights_mdp, title="Portfolio Holdings Distribution")
             fig3 = create_bar_chart(weights_mdp, title="Portfolio Holdings Distribution")
@@ -659,10 +662,11 @@ with st.sidebar:
             st.session_state["mu_stat"] = f'{np.round(mu_stat * 100, 2)}%'
             st.session_state["vol_stat"] = f'{np.round(vol_stat * 100, 2)}%'
             st.session_state["sharpe_stat"] = f'{np.round(sharpe_stat, 2)}'
+            st.session_state["max_drawdown"] = f'{np.round(max_drawdown*100, 2)}%'
     
     elif optimization_method == 'Equally weighted':
         if st.button("Generate"):
-            weights_eq, mu_stat, vol_stat, sharpe_stat = EW(markets, sectors)
+            weights_eq, mu_stat, vol_stat, sharpe_stat,max_drawdown = EW(markets, sectors)
             fig1 = st.session_state.eq_plot
             fig2 = create_pie_chart(weights_eq, title="Portfolio Holdings Distribution")
             fig3 = create_bar_chart(weights_eq, title="Portfolio Holdings Distribution")
@@ -673,6 +677,7 @@ with st.sidebar:
             st.session_state["mu_stat"] = f'{np.round(mu_stat * 100, 2)}%'
             st.session_state["vol_stat"] = f'{np.round(vol_stat * 100, 2)}%'
             st.session_state["sharpe_stat"] = f'{np.round(sharpe_stat, 2)}'
+            st.session_state["max_drawdown"] = f'{np.round(max_drawdown*100, 2)}%'
                 
     elif optimization_method == 'Black Litterman':
         #need to load the assets to be able to select them
@@ -713,7 +718,7 @@ with st.sidebar:
                 if not all(st.session_state.BL['Asset'].isin(price.columns)):
                     st.warning('Some assets in the views are not in the selected markets and sectors.')
                 else:
-                    weights_bl, mu_stat, vol_stat, sharpe_stat = BL(markets, sectors, risk_free_rate=0.03)
+                    weights_bl, mu_stat, vol_stat, sharpe_stat,max_drawdown = BL(markets, sectors, risk_free_rate=0.03)
                     fig1 = st.session_state.bl_plot
                     fig2 = create_pie_chart(weights_bl, title="Portfolio Holdings Distribution")
                     fig3 = create_bar_chart(weights_bl, title="Portfolio Holdings Distribution")
@@ -724,6 +729,7 @@ with st.sidebar:
                     st.session_state["mu_stat"] = f'{np.round(mu_stat * 100, 2)}%'
                     st.session_state["vol_stat"] = f'{np.round(vol_stat * 100, 2)}%'
                     st.session_state["sharpe_stat"] = f'{np.round(sharpe_stat, 2)}'
+                    st.session_state["max_drawdown"] = f'{np.round(max_drawdown*100, 2)}%'
 
 ####################################### MAIN #######################################
 st.title("Portfolio Summary")
@@ -762,15 +768,27 @@ if "fig1" in st.session_state and "fig2" in st.session_state and "fig3" in st.se
             unsafe_allow_html=True,
         )
     with col4:
-        st.markdown(
-            """
-            <div class="container statistic-container">
-                <div class="stat-title">Max Drawdown</div>
-                <div class="stat-value">0.00%</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        if optimization_method == "mean variance":
+
+            st.markdown(
+                f"""
+                <div class="container statistic-container">
+                    <div class="stat-title">Max Drawdown</div>
+                    <div class="stat-value">{st.session_state.get("max_drawdown", "0.00%")}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                f"""
+                <div class="container statistic-container">
+                    <div class="stat-title"></div>
+                    <div class="stat-value">Mean variance</div>
+                </div>
+                """,   
+                unsafe_allow_html=True,
+            )
 
     # Bottom Plots with Proper Spacing and Titles in Top-Left
     col5, col6 = st.columns(2)

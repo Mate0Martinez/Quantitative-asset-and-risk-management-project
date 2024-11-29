@@ -129,6 +129,7 @@ class EfficientFrontier:
         sharpe_ratio = (mu_optimized - rf) / vol_optimized
         return sharpe_ratio, mu_optimized, vol_optimized, optimized_weights
 
+
 class Portfolio: 
     # Equal Risk Contribution Portfolio maybe use only one class and change the name to portfolio 
     def __init__(self, prices, risk_free_rate=None, short=False):
@@ -197,7 +198,7 @@ class Portfolio:
         return -np.log(x.T@vol / np.sqrt(x @ sigma @ x))
     def MDP(self):
         '''Compute the maximum diversification portfolio.'''
-        constraints = [LinearConstraint(np.ones(self.x0.shape[0]), lb = 1, ub = 1)] #no long only see lecture6 for the reasons
+        constraints = [LinearConstraint(np.ones(self.x0.shape[0]), lb = 1, ub = 1)] #no long only see lecture 6 for the reasons
         res = minimize(self.DR, self.x0, args=(self.vol,self.covmat), constraints=constraints)
         optimized_weights_mdp = res.x
 
@@ -230,7 +231,7 @@ class BlackLitterman:
             self.covmat_mod[:self.n, :self.n] = self.covmat
             self.x0_mod = np.ones(self.n+1) / (self.n+1)
             self.SR = (((self.mu - self.risk_free_rate) / self.vol)@ np.ones(self.n)) / self.n
-            self.implied_mu = self.SR * (self.covmat_mod @ self.x0_mod) / np.sqrt(self.x0_mod @ self.covmat_mod @ self.x0_mod)
+            self.implied_mu = self.SR * (self.covmat @ self.x0) / np.sqrt(self.x0 @ self.covmat @ self.x0)
             self.n = self.mu.shape[0]+1
         else:
             self.mu_mod = self.returns.mean().values * 252
@@ -238,7 +239,7 @@ class BlackLitterman:
             self.covmat_mod = self.vol.reshape(1, -1) * self.correl_matrix * self.vol.reshape(-1, 1)
             self.x0_mod = np.ones(self.n) / self.n
             self.SR = self.mu / self.vol
-            self.implied_mu = self.risk_free_rate + self.SR * (self.covmat_mod @ self.x0_mod) / np.sqrt(self.x0_mod @ self.covmat_mod @ self.x0_mod)
+            self.implied_mu = self.risk_free_rate + self.SR * (self.covmat @ self.x0) / np.sqrt(self.x0 @ self.covmat @ self.x0)
         self.P = None
         self.Q = None
         self.Omega = None
@@ -275,20 +276,20 @@ class BlackLitterman:
         self.Omega = None
 
     def gamma_matrix(self,tau):
-        return tau * self.covmat_mod
+        return tau * self.covmat
 
     def target_TE(self, x, target):
         '''Compute the optimal tau for a given target volatility.'''
-        constraints = [LinearConstraint(np.ones(self.x0_mod.shape[0]), 1, 1), LinearConstraint(np.eye(self.x0_mod.shape[0]), 0)]  # Adjust constraint
+        constraints = [LinearConstraint(np.ones(self.x0.shape[0]), 1, 1), LinearConstraint(np.eye(self.x0.shape[0]), 0)]  # Adjust constraint
         #bounds = [(None, None) for _ in range(self.n)]  # Short-selling allowed
         gam = 1/self.implied_phi
         mu_bar = self.implied_mu + (self.gamma_matrix(x) @ self.P.T) @ np.linalg.inv(self.P @ self.gamma_matrix(x) @ self.P.T + self.Omega) @ (self.Q - self.P @ self.implied_mu)
-        res = minimize(self.QP, self.x0_mod, args = (self.covmat_mod, mu_bar, gam) , options={'disp': False}, constraints = constraints)
+        res = minimize(self.QP, self.x0, args = (self.covmat, mu_bar, gam) , options={'disp': False}, constraints = constraints)
         optimized_weights = res.x
-        return np.sqrt((optimized_weights-self.x0_mod) @ self.covmat_mod @ (optimized_weights-self.x0_mod)) - target
+        return np.sqrt((optimized_weights-self.x0) @ self.covmat @ (optimized_weights-self.x0)) - target
 
     def optimal_tau(self):
-        opti_tau = fsolve(self.target_TE, x0 = 0.02, args = 0.05)
+        opti_tau = fsolve(self.target_TE, x0 = 0.02, args = 0.05)[0]
         return opti_tau
 
     def BL(self,tau):
@@ -296,12 +297,11 @@ class BlackLitterman:
         if self.P is None:
             raise ValueError('No views added to the model.')
         
-        constraints = [LinearConstraint(np.ones(self.x0_mod.shape[0]), 1, 1), LinearConstraint(np.eye(self.x0_mod.shape[0]), 0)]
-
+        constraints = [LinearConstraint(np.ones(self.x0.shape[0]), 1, 1),LinearConstraint(np.eye(self.x0.shape[0]), 0)]
 
         mu_bar = self.implied_mu + (self.gamma_matrix(tau) @ self.P.T) @ np.linalg.inv(self.P @ self.gamma_matrix(tau) @ self.P.T + self.Omega) @ (self.Q - self.P @ self.implied_mu)
         gam = 1/self.implied_phi
-        res = minimize(self.QP, self.x0_mod, args = (self.covmat_mod, mu_bar, gam) , options={'disp': False}, constraints = constraints)
+        res = minimize(self.QP, self.x0, args = (self.covmat, mu_bar, gam) , options={'disp': False}, constraints = constraints)
         optimized_weights_bl = res.x
     
         return optimized_weights_bl
@@ -315,3 +315,10 @@ def get_performance(prices, weights):
     returns = returns + 1
     returns = returns.cumprod()
     return returns
+
+def max_drawdown(perf):
+
+    roll_max = perf.cummax()
+    drawdown = perf / roll_max - 1.0
+    max_drawdown = drawdown.min()
+    return max_drawdown
