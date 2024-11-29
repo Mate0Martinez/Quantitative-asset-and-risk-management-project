@@ -659,9 +659,9 @@ with st.sidebar:
             if st.button('Add view'):
                 if st.session_state.BL is None:
                     st.session_state.BL = pd.DataFrame(columns=['Asset', 'View'])
-                    st.session_state.BL = pd.DataFrame({'Asset': [select_asset], 'View': [views], 'Confidence level': [uncertainty]})
+                    st.session_state.BL = pd.DataFrame({'Asset': [select_asset], 'View': [views], 'Confidence level': [uncertainty]}).set_index('Asset')
                 else:
-                    st.session_state.BL = pd.concat([st.session_state.BL, pd.DataFrame({'Asset': [select_asset], 'View': [views], 'Confidence level': [uncertainty]})])
+                    st.session_state.BL = pd.concat([st.session_state.BL, pd.DataFrame({'Asset': [select_asset], 'View': [views], 'Confidence level': [uncertainty]})]).set_index('Asset')
                 st.write('View added')
         with col2:
             if st.button('Delete view'):
