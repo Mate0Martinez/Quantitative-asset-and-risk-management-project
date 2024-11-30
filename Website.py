@@ -25,7 +25,7 @@ else:
 ####################################### CUSTOM CSS #######################################
 # Set page configuration
 st.set_page_config(layout="wide", page_title="Portfolio Dashboard")
-st.logo("Data/logo.png")
+st.logo("Data/logo.png",icon_image="Data/logo_rond.png")
 st.html("""
   <style>
     [alt=Logo] {
@@ -540,7 +540,7 @@ def create_pie_chart(df, title="Portfolio Holdings Distribution"):
                 labels=labels,
                 values=df_filtered["Holding (%)"],
                 hoverinfo="label+percent",
-                textinfo="percent",
+                textinfo="percent" if len(labels) < 20 else "none",
                 textfont=dict(size=14),
                 hole=0.5,  # Makes the pie chart a donut shape and smaller
             )
@@ -572,7 +572,7 @@ def create_bar_chart(df, title="Portfolio Holdings Distribution"):
             go.Bar(
                 x=labels,
                 y=df["Holding (%)"],
-                hoverinfo="text",
+                hoverinfo="x + y",
                 marker=dict(color=colors)
             )
         ]
