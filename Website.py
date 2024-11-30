@@ -255,6 +255,13 @@ def ERC(markets, sectors):
     # Pass the `prices` DataFrame to the Portfolio class
     portfolio = pc.Portfolio(prices)
     weights_erc = portfolio.ERC()
+    RRC = portfolio.RRC(weights_erc,portfolio.covmat)*100
+    ARC = portfolio.ARC(weights_erc,portfolio.covmat)*100
+    #put the RRC and ARC in one dataframe
+    RC = pd.DataFrame([RRC,ARC],index=['Relative Risk Contribution','Absolute Risk Contribution'],columns=prices.columns)
+    RC = RC.applymap(lambda x: round(x,2))
+    RC = RC.applymap(lambda x: str(x)+'%')
+
 
     # Compute performance
     perf = pc.get_performance(prices, weights_erc)
@@ -312,10 +319,11 @@ def ERC(markets, sectors):
         'vol_erc': prtfl_vol,
         'sharpe_erc': sharpe_ratio,
         'perf': perf,
-        'max_drawdown': max_drawdown
+        'max_drawdown': max_drawdown,
+        'RC': RC
     }
 
-    return weights_erc, prtfl_return, prtfl_vol, sharpe_ratio, max_drawdown
+    return weights_erc, prtfl_return, prtfl_vol, sharpe_ratio, max_drawdown, RC
 
 def MDP(markets, sectors):
     prices, sectors_data = load_data(markets, sectors)
@@ -682,7 +690,8 @@ with st.sidebar:
 
     elif optimization_method == 'Equal Risk Contribution':
         if st.button("Generate"):
-            weights_erc, mu_stat, vol_stat, sharpe_stat, max_drawdown = ERC(markets, sectors)
+            weights_erc, mu_stat, vol_stat, sharpe_stat, max_drawdown,RC = ERC(markets, sectors)
+
             fig1 = st.session_state.erc_plot
             fig2 = create_pie_chart(weights_erc, title="Portfolio Holdings Distribution")
             fig3 = create_bar_chart(weights_erc, title="Portfolio Holdings Distribution")
@@ -694,6 +703,9 @@ with st.sidebar:
             st.session_state["vol_stat"] = f'{np.round(vol_stat * 100, 2)}%'
             st.session_state["sharpe_stat"] = f'{np.round(sharpe_stat, 2)}'
             st.session_state["max_drawdown"] = f'{np.round(max_drawdown*100, 2)}%'
+            st.session_state["RC"] = RC
+
+
 
     elif optimization_method == 'Most Diversified':
         if st.button("Generate"):
@@ -846,6 +858,8 @@ if "fig1" in st.session_state and "fig2" in st.session_state and "fig3" in st.se
         st.plotly_chart(st.session_state["fig2"], use_container_width=True)
     
     st.plotly_chart(st.session_state["fig3"], use_container_width=True)
+    if optimization_method == 'Equal Risk Contribution':
+        st.write(st.session_state["RC"])
 else:
     st.info("Press 'Generate' to display the portfolio summary and plots.")
 
