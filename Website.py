@@ -384,7 +384,7 @@ def MDP(markets, sectors):
 def BL(markets,sectors,risk_free_rate=None):
     prices, sectors_data = load_data(markets, sectors)
     if st.session_state.BL is None:
-        st.write('No views added, if you want to see a normal mean variance portfolio go to the mean variance portfolio page')
+        st.write('No views added, if you want to see a regular mean variance portfolio go to the mean variance portfolio page.')
        
     else:
         black_litterman = pc.BlackLitterman(prices,risk_free_rate=risk_free_rate)
@@ -601,6 +601,29 @@ with st.sidebar:
     'Select portfolio', 
     ['Select an option', 'Mean variance', 'Equal Risk Contribution', 'Most Diversified', 'Black Litterman', 'Equally weighted']
 )
+
+    if (optimization_method == 'Select an option'):
+        # presenting our website
+        st.markdown("""
+    <div style="text-align: justify;">
+        Welcome to our Portfolio Optimization Dashboard! This platform was developed by a team of five students at HEC Lausanne in the MScF program. It allows you to optimize your portfolio using different methods. You can select the method you want to use in the sidebar. You can also select the markets and sectors you want to include in your portfolio.
+    </div>
+    """,
+    unsafe_allow_html=True)
+        
+        # Add names and LinkedIn hyperlinks at the bottom of the sidebar
+        st.markdown("""
+            <div style="text-align: center; margin-top: 50px;">
+                <p style="font-size: 18px; font-weight: bold;">Developed by:</p>
+                <p style="font-size: 16px;">
+                    <a href="https://www.linkedin.com/in/mateo-martinez-428224257/" target="_blank" style="text-decoration: none; color: #0072b1;">Mateo Martinez</a><br>
+                    <a href="https://www.linkedin.com/in/dorentin-morina/" target="_blank" style="text-decoration: none; color: #0072b1;">Dorentin Morina</a><br>
+                    <a href="https://www.linkedin.com/in/shpetim-tafili-b38149264/" target="_blank" style="text-decoration: none; color: #0072b1;">Shpetim Tafili</a><br>
+                    <a href="https://www.linkedin.com/in/wzed/" target="_blank" style="text-decoration: none; color: #0072b1;">Wassim Zeddoug</a><br>
+                    <a href="https://www.linkedin.com/in/student5" target="_blank" style="text-decoration: none; color: #0072b1;">Jeremy Bourqui</a>
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
 
     if (optimization_method != 'Select an option'):
         container = st.container()
@@ -914,9 +937,22 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-st.markdown(
-    """
-    <div class="footer">The information provided by our website is for educational purpose only and does not constitute financial advice</div>
-    """,
-    unsafe_allow_html=True,
-)
+st.markdown("""
+    <style>
+    .footer {
+        position: fixed;
+        left: 15%;
+        bottom: 0;
+        width: 100%;
+        background-color: #100E22;
+        color: #fff;
+        text-align: center;
+        padding: 10px;
+        font-size: 14px;
+        box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+    }
+    </style>
+    <div class="footer">
+        The information provided by our website is for educational purposes only and does not constitute financial advice or investment recommendations.
+    </div>
+""", unsafe_allow_html=True)
