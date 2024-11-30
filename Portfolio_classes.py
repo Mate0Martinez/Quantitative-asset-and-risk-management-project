@@ -189,8 +189,11 @@ class Portfolio:
     def ERC(self):
         '''Compute the equal risk contribution portfolio.'''
         n = self.prices.shape[1]
-        logy = lambda y: np.sum(np.log(y))
-        constraints = [LinearConstraint(np.eye(self.x0.shape[0]), lb = 0, ub = 1), NonlinearConstraint(logy, lb = -n * np.log(n) - 2, ub=np.inf)]
+        def logx(x):
+            if np.any(x <= 0):
+                return -np.inf  # Return a large negative value to indicate invalid input
+            return np.sum(np.log(x))
+        constraints = [LinearConstraint(np.eye(self.x0.shape[0]), lb = 0, ub = 1), NonlinearConstraint(logx, lb = -n * np.log(n) - 2, ub=np.inf)]
         res = minimize(self.QP, self.x0, args=(self.covmat), constraints=constraints) 
         optimized_weights_erc = res.x / np.sum(res.x)
         return optimized_weights_erc
