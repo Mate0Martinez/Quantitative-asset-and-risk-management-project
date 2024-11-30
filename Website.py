@@ -561,7 +561,7 @@ def create_pie_chart(df, title="Portfolio Holdings Distribution"):
     return fig
 
 def create_bar_chart(df, title="Portfolio Holdings Distribution"):
- 
+    df = df[abs(df["Holding (%)"]) > 0.001]
     # Use the DataFrame's index as labels if there is no "Company" column
     labels = df.index if "Company" not in df.columns else df["Company"]
     colors = ['forestgreen' if percent > 0 else 'firebrick' for percent in df["Holding (%)"]]
@@ -620,7 +620,7 @@ with st.sidebar:
                     <a href="https://www.linkedin.com/in/dorentin-morina/" target="_blank" style="text-decoration: none; color: #0072b1;">Dorentin Morina</a><br>
                     <a href="https://www.linkedin.com/in/shpetim-tafili-b38149264/" target="_blank" style="text-decoration: none; color: #0072b1;">Shpetim Tafili</a><br>
                     <a href="https://www.linkedin.com/in/wzed/" target="_blank" style="text-decoration: none; color: #0072b1;">Wassim Zeddoug</a><br>
-                    <a href="https://www.linkedin.com/in/student5" target="_blank" style="text-decoration: none; color: #0072b1;">Jeremy Bourqui</a>
+                    <a href="https://www.linkedin.com/in/jeremy-bourqui-27b006273/" target="_blank" style="text-decoration: none; color: #0072b1;">Jeremy Bourqui</a>
                 </p>
             </div>
             """, unsafe_allow_html=True)
@@ -648,6 +648,15 @@ with st.sidebar:
 
     if optimization_method == 'Mean variance':
         shortyes = st.checkbox('Short-selling?', value=False)
+        if shortyes:
+            st.markdown(
+            """
+            <div style="color: red; font-size: 12px; margin-top: -10px;">
+                Warning: allowing short selling makes your investment more aggressive.
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
         riskyes = st.checkbox('Risk-free rate?', value=False)
         if riskyes:
             risk_free_rate = st.number_input('Risk-free rate (in %)', value=1.00, step=0.01)
