@@ -24,7 +24,7 @@ else:
 
 ####################################### CUSTOM CSS #######################################
 # Set page configuration
-st.set_page_config(layout="wide", page_title="Portfolio Dashboard")
+st.set_page_config(layout="wide", page_title="Lunae Capital", page_icon="Data/logo_rond.png")
 st.logo("Data/logo.png",icon_image="Data/logo_rond.png")
 st.html("""
   <style>
