@@ -789,81 +789,122 @@ with st.sidebar:
                     st.session_state["sharpe_stat"] = f'{np.round(sharpe_stat, 2)}'
                     st.session_state["max_drawdown"] = f'{np.round(max_drawdown*100, 2)}%'
 
-####################################### MAIN #######################################
-st.title("Portfolio Summary")
+front_page_content = """
+# Welcome to Lunae Capital!
+Explore our innovative investment solutions designed to optimize your portfolio with advanced quantitative strategies. You will also be able to chose the markets and the sectors you are interested in and 
+visualize your portfolio’s composition through interactive graphs and gain insights into the recommended asset allocations displayed in detailed bar plots!
 
-if "fig1" in st.session_state and "fig2" in st.session_state and "fig3" in st.session_state:
-    # Top Statistics with Restored Backgrounds and Spacing
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.markdown(
-            f"""
-            <div class="container statistic-container">
-                <div class="stat-title">Return</div>
-                <div class="stat-value">{st.session_state.get("mu_stat", "0.00%")}</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with col2:
-        st.markdown(
-            f"""
-            <div class="container statistic-container">
-                <div class="stat-title">Volatility</div>
-                <div class="stat-value">{st.session_state.get("vol_stat", "0.00%")}</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with col3:
-        st.markdown(
-            f"""
-            <div class="container statistic-container">
-                <div class="stat-title">Sharpe Ratio</div>
-                <div class="stat-value">{st.session_state.get("sharpe_stat", "0.00%")}</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with col4:
-        if optimization_method == "Mean variance":
+**Please note:** Our trading bot is currently in beta testing. While it isn’t operational directly on the website, you can clone the repository to access and use it. 
+The bot executes trades on the Oanda platform on your behalf. For more information about these trades or their performance, feel free to connect with us on LinkedIn.
 
+---
+
+## Strategies Overview
+
+### Mean-Variance Optimization
+If your goal is to maximize returns while minimizing risk, this strategy is perfect for you! With the Markowitz approach and the capital market line, 
+you can build an optimal portfolio tailored to your preferences. Select the sectors, markets, risk tolerance, and risk-free rate to construct a portfolio that suits your goals. 
+Be cautious: allowing short selling will increase risk, making this strategy more aggressive.
+
+### Equal Risk Contribution (ERC)
+The Equal Risk Contribution strategy distributes risk evenly among assets, ensuring each contributes equally to the portfolio's total risk. 
+This approach is particularly useful for investors seeking balanced risk exposure without over-reliance on specific assets. 
+ERC is ideal for those prioritizing stability and diversification, especially in scenarios where equal participation of assets in risk management aligns with their investment philosophy.
+
+### Most Diversified Portfolio
+The most diversified portfolio spreads risk evenly across all assets, aiming for the highest level of diversification. 
+Instead of solely maximizing returns or minimizing risk, this strategy balances contributions to overall portfolio risk. 
+It’s well-suited for investors seeking stability and reduced sensitivity to individual asset volatility. This strategy shines in uncertain markets or for building a resilient, long-term portfolio.
+
+### Black-Litterman
+The Black-Litterman portfolio integrates market data with personal investor views to create an optimal portfolio. 
+You can express bullish or bearish opinions on assets and set your confidence level, allowing the strategy to adjust expected returns and risks accordingly. 
+This approach is perfect for investors who want to blend market consensus with their insights in a mathematically rigorous way.
+
+### Equally Weighted
+The equally weighted portfolio assigns the same weight to each asset, ensuring no single asset dominates. 
+Simple and unbiased, it doesn't depend on forecasts or assumptions, making it ideal for investors seeking diversification without complexity. 
+This strategy is particularly effective for those who want to maintain equal exposure across all selected assets.
+"""
+
+
+################################# FRONT PAGE #################################
+selected_page = st.sidebar.radio("Go to", ["Front Page", "Portfolio Summary"])
+
+if selected_page == "Front Page":
+    st.markdown(front_page_content, unsafe_allow_html=True)
+
+################################ PORTFOLIO SUMMARY ################################
+
+elif selected_page == "Portfolio Summary":
+    st.title("Portfolio Summary")
+
+    if "fig1" in st.session_state and "fig2" in st.session_state and "fig3" in st.session_state:
+        # Top Statistics with Restored Backgrounds and Spacing
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
             st.markdown(
                 f"""
                 <div class="container statistic-container">
-                    <div class="stat-title"></div>
-                    <div class="stat-value">Mean variance</div>
-                </div>
-                """,   
-                unsafe_allow_html=True,
-            )
-        else:
-            
-            st.markdown(
-                f"""
-                <div class="container statistic-container">
-                    <div class="stat-title">Max Drawdown</div>
-                    <div class="stat-value">{st.session_state.get("max_drawdown", "0.00%")}</div>
+                    <div class="stat-title">Return</div>
+                    <div class="stat-value">{st.session_state.get("mu_stat", "0.00%")}</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
+        with col2:
+            st.markdown(
+                f"""
+                <div class="container statistic-container">
+                    <div class="stat-title">Volatility</div>
+                    <div class="stat-value">{st.session_state.get("vol_stat", "0.00%")}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        with col3:
+            st.markdown(
+                f"""
+                <div class="container statistic-container">
+                    <div class="stat-title">Sharpe Ratio</div>
+                    <div class="stat-value">{st.session_state.get("sharpe_stat", "0.00%")}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        with col4:
+            if optimization_method == "Mean variance":
+                st.markdown(
+                    f"""
+                    <div class="container statistic-container">
+                        <div class="stat-title"></div>
+                        <div class="stat-value">Mean variance</div>
+                    </div>
+                    """,   
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.markdown(
+                    f"""
+                    <div class="container statistic-container">
+                        <div class="stat-title">Max Drawdown</div>
+                        <div class="stat-value">{st.session_state.get("max_drawdown", "0.00%")}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
-    # Bottom Plots with Proper Spacing and Titles in Top-Left
-    col5, col6 = st.columns(2)
-    with col5:  # Efficient Frontier Plot
-        st.plotly_chart(st.session_state["fig1"], use_container_width=True)
+        # Bottom Plots with Proper Spacing and Titles in Top-Left
+        col5, col6 = st.columns(2)
+        with col5:  # Efficient Frontier Plot
+            st.plotly_chart(st.session_state["fig1"], use_container_width=True)
 
-    with col6:  # Portfolio Holdings Distribution
-        st.plotly_chart(st.session_state["fig2"], use_container_width=True)
-    
-    st.plotly_chart(st.session_state["fig3"], use_container_width=True)
-    if optimization_method == 'Equal Risk Contribution':
-        st.write(st.session_state["RC"])
-
-else:
-    st.info("Press 'Generate' to display the portfolio summary and plots.")
-
+        with col6:  # Portfolio Holdings Distribution
+            st.plotly_chart(st.session_state["fig2"], use_container_width=True)
+        
+        st.plotly_chart(st.session_state["fig3"], use_container_width=True)
+    else:
+        st.info("Press 'Generate' to display the portfolio summary and plots.")
 
 
 ################################# BOT #################################
@@ -920,6 +961,16 @@ def run_bot():
         scheduler.shutdown()
 
 st.title("Trading Bot Control Panel")
+# in red color, add a space top and bottom the message: Please note: Our trading bot is currently in beta testing. While it isn’t operational directly on the website, you can clone the repository to access and use it. The bot executes trades on the Oanda platform on your behalf. For more information about these trades or their performance, feel free to connect with us on LinkedIn.
+st.markdown(
+    """
+    <div style="color: red; margin-top: 1px; margin-bottom: 20px;">
+        Please note: Our trading bot is currently in beta testing. While it isn’t operational directly on the website, you can clone the repository to access and use it. The bot executes trades on the Oanda platform on your behalf. For more information about these trades or their performance, feel free to connect with us on LinkedIn.
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 
 # Start button
 if st.button("Start Trading Bot"):
@@ -980,3 +1031,6 @@ st.markdown("""
         The information provided by our website is for educational purposes only and does not constitute financial advice or investment recommendations.
     </div>
 """, unsafe_allow_html=True)
+
+
+
