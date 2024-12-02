@@ -903,6 +903,8 @@ elif selected_page == "Portfolio Summary":
             st.plotly_chart(st.session_state["fig2"], use_container_width=True)
         
         st.plotly_chart(st.session_state["fig3"], use_container_width=True)
+        if optimization_method == 'Equal Risk Contribution':
+            st.write(st.session_state["RC"])
     else:
         st.info("Press 'Generate' to display the portfolio summary and plots.")
 
