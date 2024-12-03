@@ -303,7 +303,7 @@ class BlackLitterman:
         if self.P is None:
             raise ValueError('No views added to the model.')
         
-        constraints = [LinearConstraint(np.ones(self.x0.shape[0]), 1, 1),LinearConstraint(np.eye(self.x0.shape[0]), 0)]
+        constraints = [LinearConstraint(np.ones(self.x0.shape[0]), 1, 1)]#,LinearConstraint(np.eye(self.x0.shape[0]), 0)
 
         mu_bar = self.implied_mu + (self.gamma_matrix(tau) @ self.P.T) @ np.linalg.inv(self.P @ self.gamma_matrix(tau) @ self.P.T + self.Omega) @ (self.Q - self.P @ self.implied_mu)
         gam = 1/self.implied_phi
